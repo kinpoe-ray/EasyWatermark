@@ -6,6 +6,11 @@ const downloadBtn = document.getElementById("downloadBtn");
 const previewCanvas = document.getElementById("previewCanvas");
 const progress = document.getElementById("progress");
 const hint = document.getElementById("hint");
+const settingsBtn = document.getElementById("settingsBtn");
+const settingsModal = document.getElementById("settingsModal");
+const closeSettings = document.getElementById("closeSettings");
+const closeSettings2 = document.getElementById("closeSettings2");
+const exportSummary = document.getElementById("exportSummary");
 
 const addTextBtn = document.getElementById("addTextBtn");
 const addLogoBtn = document.getElementById("addLogoBtn");
@@ -26,6 +31,13 @@ const scaleValue = document.getElementById("scaleValue");
 const tileGapInput = document.getElementById("tileGap");
 const tileGapValue = document.getElementById("tileGapValue");
 const tileStyleEl = document.getElementById("tileStyle");
+const resizeModeInput = document.getElementById("resizeMode");
+const resizeValueInput = document.getElementById("resizeValue");
+const renameModeInput = document.getElementById("renameMode");
+const renamePrefixInput = document.getElementById("renamePrefix");
+const renameSuffixInput = document.getElementById("renameSuffix");
+const sequenceStartInput = document.getElementById("sequenceStart");
+const randomizePositionInput = document.getElementById("randomizePosition");
 
 const STORAGE_KEY = "easy-watermark-template";
 const GEMINI_LOGO_VALUE = 255;
@@ -51,6 +63,17 @@ const state = {
   tileStyle: "single",
   tileGap: 180,
   position: { x: 0.5, y: 0.5 },
+  export: {
+    format: "auto",
+    quality: 0.92,
+    resizeMode: "none",
+    resizeValue: 1024,
+    renameMode: "keep",
+    renamePrefix: "wm_",
+    renameSuffix: "_watermarked",
+    sequenceStart: 1,
+    randomizePosition: false,
+  },
 };
 
 let geminiAlpha48 = null;
@@ -102,7 +125,17 @@ function applyStateToInputs() {
   document.getElementById("mode").value = state.mode;
   tileGapInput.value = state.tileGap;
   setActiveTileStyle(state.tileStyle);
+  document.getElementById("format").value = state.export.format;
+  qualityInput.value = state.export.quality;
+  resizeModeInput.value = state.export.resizeMode;
+  resizeValueInput.value = state.export.resizeValue;
+  renameModeInput.value = state.export.renameMode;
+  renamePrefixInput.value = state.export.renamePrefix;
+  renameSuffixInput.value = state.export.renameSuffix;
+  sequenceStartInput.value = state.export.sequenceStart;
+  randomizePositionInput.checked = state.export.randomizePosition;
   updateRangeDisplays();
+  updateExportSummary();
 }
 
 updateRangeDisplays();
@@ -124,6 +157,21 @@ applyStateToInputs();
   });
 });
 
+[
+  resizeModeInput,
+  resizeValueInput,
+  renameModeInput,
+  renamePrefixInput,
+  renameSuffixInput,
+  sequenceStartInput,
+  randomizePositionInput,
+].forEach((input) => {
+  input.addEventListener("input", () => {
+    syncStateFromInputs();
+    updateExportSummary();
+  });
+});
+
 removeThenAddInput.addEventListener("change", () => {
   if (removeThenAddInput.checked) {
     processModeInput.value = "remove-gemini";
@@ -132,6 +180,13 @@ removeThenAddInput.addEventListener("change", () => {
   }
   syncStateFromInputs();
   renderPreview();
+});
+
+settingsBtn.addEventListener("click", () => settingsModal.classList.add("show"));
+closeSettings.addEventListener("click", () => settingsModal.classList.remove("show"));
+closeSettings2.addEventListener("click", () => settingsModal.classList.remove("show"));
+settingsModal.addEventListener("click", (event) => {
+  if (event.target === settingsModal) settingsModal.classList.remove("show");
 });
 
 tileStyleEl.addEventListener("click", (event) => {
@@ -193,16 +248,21 @@ downloadBtn.addEventListener("click", async () => {
 
   try {
     const zip = new window.JSZip();
+    const originalPosition = { ...state.position };
     let index = 0;
     for (const file of files) {
       index += 1;
       progress.textContent = `处理中 ${index}/${files.length}`;
+      if (state.export.randomizePosition && state.mode === "single") {
+        state.position = getRandomPosition(file.name);
+      }
       const canvas = await renderImageWithWatermark(file, getSettings());
       const { type, quality, ext } = resolveOutputFormat(file);
       const blob = await canvasToBlob(canvas, type, quality);
-      const fileName = `${stripExt(file.name)}_wm.${ext}`;
+      const fileName = getOutputName(file, index - 1, ext);
       zip.file(fileName, blob);
     }
+    state.position = originalPosition;
 
     progress.textContent = "正在打包...";
     const zipBlob = await zip.generateAsync({ type: "blob" });
@@ -269,6 +329,15 @@ function syncStateFromInputs() {
   state.scale = Number(scaleInput.value);
   state.mode = document.getElementById("mode").value;
   state.tileGap = Number(tileGapInput.value);
+  state.export.format = document.getElementById("format").value;
+  state.export.quality = Number(qualityInput.value);
+  state.export.resizeMode = resizeModeInput.value;
+  state.export.resizeValue = Number(resizeValueInput.value) || 1024;
+  state.export.renameMode = renameModeInput.value;
+  state.export.renamePrefix = renamePrefixInput.value.trim();
+  state.export.renameSuffix = renameSuffixInput.value.trim();
+  state.export.sequenceStart = Number(sequenceStartInput.value) || 1;
+  state.export.randomizePosition = randomizePositionInput.checked;
 }
 
 function getSettings() {
@@ -280,22 +349,30 @@ function getSettings() {
 
 async function renderImageWithWatermark(file, settings, showGuide = false) {
   const image = await loadImage(file);
-  const canvas = document.createElement("canvas");
-  canvas.width = image.width;
-  canvas.height = image.height;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+  const baseCanvas = document.createElement("canvas");
+  baseCanvas.width = image.width;
+  baseCanvas.height = image.height;
+  const baseCtx = baseCanvas.getContext("2d");
+  baseCtx.drawImage(image, 0, 0, baseCanvas.width, baseCanvas.height);
   if (settings.processMode === "remove-gemini") {
-    await removeGeminiWatermark(canvas);
+    await removeGeminiWatermark(baseCanvas);
     if (!settings.removeThenAdd) {
       hint.textContent = "Gemini 可见水印移除（不影响 SynthID）";
-      return canvas;
+      if (settings.export.resizeMode !== "none") {
+        return resizeCanvas(baseCanvas, settings.export.resizeMode, settings.export.resizeValue);
+      }
+      return baseCanvas;
     }
   }
-  if (settings.processMode === "add" || settings.removeThenAdd) {
-    drawWatermark(ctx, canvas.width, canvas.height, settings, showGuide);
+  let workingCanvas = baseCanvas;
+  if (settings.export.resizeMode !== "none") {
+    workingCanvas = resizeCanvas(baseCanvas, settings.export.resizeMode, settings.export.resizeValue);
   }
-  return canvas;
+  if (settings.processMode === "add" || settings.removeThenAdd) {
+    const ctx = workingCanvas.getContext("2d");
+    drawWatermark(ctx, workingCanvas.width, workingCanvas.height, settings, showGuide);
+  }
+  return workingCanvas;
 }
 
 function drawWatermark(ctx, width, height, settings, showGuide) {
@@ -441,12 +518,12 @@ function getCenterPoint(width, height) {
 }
 
 function resolveOutputFormat(file) {
-  const format = document.getElementById("format").value;
+  const format = state.export.format;
   if (format === "png") return { type: "image/png", quality: 1, ext: "png" };
-  if (format === "jpg") return { type: "image/jpeg", quality: Number(qualityInput.value), ext: "jpg" };
+  if (format === "jpg") return { type: "image/jpeg", quality: state.export.quality, ext: "jpg" };
 
   if (file.type === "image/jpeg") {
-    return { type: "image/jpeg", quality: Number(qualityInput.value), ext: "jpg" };
+    return { type: "image/jpeg", quality: state.export.quality, ext: "jpg" };
   }
   return { type: "image/png", quality: 1, ext: "png" };
 }
@@ -455,6 +532,24 @@ function stripExt(filename) {
   const dotIndex = filename.lastIndexOf(".");
   if (dotIndex === -1) return filename;
   return filename.slice(0, dotIndex);
+}
+
+function getOutputName(file, index, ext) {
+  const base = stripExt(file.name);
+  switch (state.export.renameMode) {
+    case "prefix":
+      return `${state.export.renamePrefix || "wm_"}${base}.${ext}`;
+    case "suffix":
+      return `${base}${state.export.renameSuffix || "_watermarked"}.${ext}`;
+    case "sequence": {
+      const start = state.export.sequenceStart || 1;
+      const num = String(start + index).padStart(3, "0");
+      return `image_${num}.${ext}`;
+    }
+    case "keep":
+    default:
+      return `${base}.${ext}`;
+  }
 }
 
 function canvasToBlob(canvas, type, quality) {
@@ -472,6 +567,33 @@ function downloadBlob(blob, filename) {
   anchor.click();
   anchor.remove();
   URL.revokeObjectURL(url);
+}
+
+function resizeCanvas(source, mode, value) {
+  const width = source.width;
+  const height = source.height;
+  let targetWidth = width;
+  let targetHeight = height;
+
+  if (mode === "width") {
+    targetWidth = value;
+    targetHeight = Math.round((height / width) * targetWidth);
+  } else if (mode === "height") {
+    targetHeight = value;
+    targetWidth = Math.round((width / height) * targetHeight);
+  } else if (mode === "max") {
+    const maxSide = Math.max(width, height);
+    const scale = value / maxSide;
+    targetWidth = Math.round(width * scale);
+    targetHeight = Math.round(height * scale);
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, targetWidth);
+  canvas.height = Math.max(1, targetHeight);
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+  return canvas;
 }
 
 function loadImage(file) {
@@ -634,6 +756,34 @@ function loadImageFromUrl(url) {
     img.onerror = () => reject(new Error("Failed to load asset image"));
     img.src = url;
   });
+}
+
+function updateExportSummary() {
+  const formatLabel = state.export.format === "auto" ? "Original" : state.export.format.toUpperCase();
+  let resizeLabel = "No resize";
+  if (state.export.resizeMode === "width") resizeLabel = `Width ${state.export.resizeValue}px`;
+  if (state.export.resizeMode === "height") resizeLabel = `Height ${state.export.resizeValue}px`;
+  if (state.export.resizeMode === "max") resizeLabel = `Max ${state.export.resizeValue}px`;
+  let renameLabel = "Keep original";
+  if (state.export.renameMode === "prefix") renameLabel = `Prefix ${state.export.renamePrefix || "wm_"}`;
+  if (state.export.renameMode === "suffix") renameLabel = `Suffix ${state.export.renameSuffix || "_watermarked"}`;
+  if (state.export.renameMode === "sequence") renameLabel = `Sequence from ${state.export.sequenceStart || 1}`;
+
+  exportSummary.textContent = `${formatLabel} · ${resizeLabel} · ${renameLabel}`;
+}
+
+function getRandomPosition(seedText) {
+  let hash = 2166136261;
+  for (let i = 0; i < seedText.length; i += 1) {
+    hash ^= seedText.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  const rand1 = ((hash >>> 0) % 1000) / 1000;
+  const rand2 = (((hash >>> 8) >>> 0) % 1000) / 1000;
+  return {
+    x: 0.15 + rand1 * 0.7,
+    y: 0.15 + rand2 * 0.7,
+  };
 }
 
 function fileToDataUrl(file) {
