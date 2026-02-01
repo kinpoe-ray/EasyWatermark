@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Easy Watermark Web</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <div>
+          <div class="tag">Pure Frontend</div>
+          <h1>Easy Watermark Web</h1>
+          <p>Add text watermarks to multiple images directly in your browser.</p>
+        </div>
+      </header>
+
+      <section class="panel">
+        <div class="panel-title">1. Upload Images</div>
+        <input id="fileInput" type="file" accept="image/*" multiple />
+        <div id="fileSummary" class="muted">No files selected.</div>
+      </section>
+
+      <section class="panel grid">
+        <div>
+          <div class="panel-title">2. Watermark Settings</div>
+          <div class="form-row">
+            <label for="wmText">Text</label>
+            <input id="wmText" type="text" placeholder="Your watermark" value="Sample Watermark" />
+          </div>
+          <div class="form-row">
+            <label for="fontSize">Font Size</label>
+            <input id="fontSize" type="number" min="8" max="300" value="48" />
+          </div>
+          <div class="form-row">
+            <label for="wmColor">Color</label>
+            <input id="wmColor" type="color" value="#ffffff" />
+          </div>
+          <div class="form-row">
+            <label for="opacity">Opacity</label>
+            <input id="opacity" type="range" min="0" max="1" step="0.05" value="0.35" />
+            <span id="opacityValue" class="value">0.35</span>
+          </div>
+          <div class="form-row">
+            <label for="rotation">Rotation</label>
+            <input id="rotation" type="range" min="-90" max="90" step="1" value="-20" />
+            <span id="rotationValue" class="value">-20°</span>
+          </div>
+          <div class="form-row">
+            <label for="position">Position</label>
+            <select id="position">
+              <option value="tile">Tile</option>
+              <option value="center">Center</option>
+              <option value="top-left">Top Left</option>
+              <option value="top-right">Top Right</option>
+              <option value="bottom-left">Bottom Left</option>
+              <option value="bottom-right">Bottom Right</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="margin">Margin</label>
+            <input id="margin" type="number" min="0" max="500" value="40" />
+          </div>
+          <div class="form-row">
+            <label for="tileGap">Tile Gap</label>
+            <input id="tileGap" type="number" min="0" max="800" value="180" />
+          </div>
+          <div class="panel-title">3. Export</div>
+          <div class="form-row">
+            <label for="format">Format</label>
+            <select id="format">
+              <option value="auto">Original</option>
+              <option value="png">PNG</option>
+              <option value="jpg">JPG</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="quality">JPG Quality</label>
+            <input id="quality" type="range" min="0.5" max="1" step="0.01" value="0.92" />
+            <span id="qualityValue" class="value">0.92</span>
+          </div>
+          <div class="actions">
+            <button id="previewBtn" class="ghost">Render Preview</button>
+            <button id="downloadBtn">Download ZIP</button>
+          </div>
+          <div id="progress" class="muted"></div>
+        </div>
+
+        <div class="preview">
+          <div class="panel-title">Preview</div>
+          <div class="canvas-wrap">
+            <canvas id="previewCanvas"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <div>All processing happens in your browser. No uploads.</div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
