@@ -1,9 +1,15 @@
 const fileInput = document.getElementById("fileInput");
+const logoInput = document.getElementById("logoInput");
 const fileSummary = document.getElementById("fileSummary");
 const previewBtn = document.getElementById("previewBtn");
 const downloadBtn = document.getElementById("downloadBtn");
 const previewCanvas = document.getElementById("previewCanvas");
 const progress = document.getElementById("progress");
+const hint = document.getElementById("hint");
+
+const addTextBtn = document.getElementById("addTextBtn");
+const addLogoBtn = document.getElementById("addLogoBtn");
+const removeBtn = document.getElementById("removeBtn");
 
 const opacityInput = document.getElementById("opacity");
 const opacityValue = document.getElementById("opacityValue");
@@ -11,25 +17,127 @@ const rotationInput = document.getElementById("rotation");
 const rotationValue = document.getElementById("rotationValue");
 const qualityInput = document.getElementById("quality");
 const qualityValue = document.getElementById("qualityValue");
+const fontSizeInput = document.getElementById("fontSize");
+const fontSizeValue = document.getElementById("fontSizeValue");
+const scaleInput = document.getElementById("scale");
+const scaleValue = document.getElementById("scaleValue");
+const tileGapInput = document.getElementById("tileGap");
+const tileGapValue = document.getElementById("tileGapValue");
+
+const STORAGE_KEY = "easy-watermark-template";
 
 let files = [];
+let activeImageIndex = 0;
+let logoImage = null;
+let isDragging = false;
+let dragOffset = { x: 0, y: 0 };
+
+const state = {
+  type: "text",
+  text: "@watermark",
+  fontFamily: "Arial",
+  fontSize: 48,
+  color: "#ffffff",
+  opacity: 0.35,
+  rotation: -20,
+  scale: 1,
+  mode: "single",
+  tileGap: 180,
+  position: { x: 0.5, y: 0.5 },
+};
 
 function updateRangeDisplays() {
   opacityValue.textContent = opacityInput.value;
   rotationValue.textContent = `${rotationInput.value}°`;
   qualityValue.textContent = qualityInput.value;
+  fontSizeValue.textContent = fontSizeInput.value;
+  scaleValue.textContent = Number(scaleInput.value).toFixed(2);
+  tileGapValue.textContent = tileGapInput.value;
+}
+
+function loadTemplate() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+  try {
+    const saved = JSON.parse(raw);
+    Object.assign(state, saved);
+    applyStateToInputs();
+    if (saved.logoDataUrl) {
+      loadLogoFromDataUrl(saved.logoDataUrl);
+    }
+  } catch (error) {
+    console.warn("Failed to load template", error);
+  }
+}
+
+function saveTemplate() {
+  const payload = { ...state };
+  if (logoImage && state.logoDataUrl) {
+    payload.logoDataUrl = state.logoDataUrl;
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+}
+
+function applyStateToInputs() {
+  document.getElementById("wmText").value = state.text;
+  document.getElementById("fontFamily").value = state.fontFamily;
+  fontSizeInput.value = state.fontSize;
+  document.getElementById("wmColor").value = state.color;
+  opacityInput.value = state.opacity;
+  rotationInput.value = state.rotation;
+  scaleInput.value = state.scale;
+  document.getElementById("mode").value = state.mode;
+  tileGapInput.value = state.tileGap;
+  updateRangeDisplays();
 }
 
 updateRangeDisplays();
+loadTemplate();
+applyStateToInputs();
 
-opacityInput.addEventListener("input", updateRangeDisplays);
-rotationInput.addEventListener("input", updateRangeDisplays);
-qualityInput.addEventListener("input", updateRangeDisplays);
+[opacityInput, rotationInput, qualityInput, fontSizeInput, scaleInput, tileGapInput].forEach((input) => {
+  input.addEventListener("input", () => {
+    syncStateFromInputs();
+    updateRangeDisplays();
+    renderPreview();
+  });
+});
+
+["wmText", "fontFamily", "wmColor", "mode"].forEach((id) => {
+  document.getElementById(id).addEventListener("input", () => {
+    syncStateFromInputs();
+    renderPreview();
+  });
+});
+
+addTextBtn.addEventListener("click", () => {
+  state.type = "text";
+  renderPreview();
+});
+
+addLogoBtn.addEventListener("click", () => {
+  state.type = "logo";
+  renderPreview();
+});
+
+removeBtn.addEventListener("click", () => {
+  state.type = null;
+  renderPreview();
+});
+
+logoInput.addEventListener("change", async () => {
+  const file = logoInput.files && logoInput.files[0];
+  if (!file) return;
+  const dataUrl = await fileToDataUrl(file);
+  state.logoDataUrl = dataUrl;
+  loadLogoFromDataUrl(dataUrl);
+});
 
 fileInput.addEventListener("change", () => {
   files = Array.from(fileInput.files || []);
+  activeImageIndex = 0;
   if (files.length === 0) {
-    fileSummary.textContent = "No files selected.";
+    fileSummary.textContent = "未选择图片";
     downloadBtn.disabled = true;
     previewBtn.disabled = true;
     return;
@@ -37,7 +145,7 @@ fileInput.addEventListener("change", () => {
 
   const totalSize = files.reduce((sum, file) => sum + file.size, 0);
   const sizeMb = (totalSize / (1024 * 1024)).toFixed(2);
-  fileSummary.textContent = `${files.length} files selected (${sizeMb} MB).`;
+  fileSummary.textContent = `${files.length} 张图片 (${sizeMb} MB)`;
   downloadBtn.disabled = false;
   previewBtn.disabled = false;
   renderPreview();
@@ -49,14 +157,14 @@ downloadBtn.addEventListener("click", async () => {
   if (files.length === 0) return;
   downloadBtn.disabled = true;
   previewBtn.disabled = true;
-  progress.textContent = "Rendering...";
+  progress.textContent = "渲染中...";
 
   try {
     const zip = new window.JSZip();
     let index = 0;
     for (const file of files) {
       index += 1;
-      progress.textContent = `Processing ${index}/${files.length}`;
+      progress.textContent = `处理中 ${index}/${files.length}`;
       const canvas = await renderImageWithWatermark(file, getSettings());
       const { type, quality, ext } = resolveOutputFormat(file);
       const blob = await canvasToBlob(canvas, type, quality);
@@ -64,112 +172,169 @@ downloadBtn.addEventListener("click", async () => {
       zip.file(fileName, blob);
     }
 
-    progress.textContent = "Packaging ZIP...";
+    progress.textContent = "正在打包...";
     const zipBlob = await zip.generateAsync({ type: "blob" });
     downloadBlob(zipBlob, `easy-watermark-${Date.now()}.zip`);
-    progress.textContent = "Done.";
+    progress.textContent = "完成";
   } catch (error) {
     console.error(error);
-    progress.textContent = "Failed. Check console for details.";
+    progress.textContent = "失败，请查看控制台";
   } finally {
     downloadBtn.disabled = false;
     previewBtn.disabled = false;
   }
 });
 
+previewCanvas.addEventListener("pointerdown", (event) => {
+  if (!files.length || state.mode === "tile" || !state.type) return;
+  const hit = hitTest(event);
+  if (!hit) return;
+  isDragging = true;
+  dragOffset = hit.offset;
+  previewCanvas.setPointerCapture(event.pointerId);
+});
+
+previewCanvas.addEventListener("pointermove", (event) => {
+  if (!isDragging) return;
+  const pos = getCanvasPoint(event);
+  const width = previewCanvas.width;
+  const height = previewCanvas.height;
+  state.position = {
+    x: clamp((pos.x - dragOffset.x) / width, 0, 1),
+    y: clamp((pos.y - dragOffset.y) / height, 0, 1),
+  };
+  renderPreview();
+});
+
+previewCanvas.addEventListener("pointerup", (event) => {
+  if (!isDragging) return;
+  isDragging = false;
+  previewCanvas.releasePointerCapture(event.pointerId);
+  saveTemplate();
+});
+
 async function renderPreview() {
   if (files.length === 0) return;
-  const canvas = await renderImageWithWatermark(files[0], getSettings());
+  syncStateFromInputs();
+  const canvas = await renderImageWithWatermark(files[activeImageIndex], getSettings(), true);
   previewCanvas.width = canvas.width;
   previewCanvas.height = canvas.height;
   const ctx = previewCanvas.getContext("2d");
   ctx.drawImage(canvas, 0, 0);
+  saveTemplate();
+}
+
+function syncStateFromInputs() {
+  state.text = document.getElementById("wmText").value.trim() || "Watermark";
+  state.fontFamily = document.getElementById("fontFamily").value;
+  state.fontSize = Number(fontSizeInput.value) || 48;
+  state.color = document.getElementById("wmColor").value;
+  state.opacity = Number(opacityInput.value);
+  state.rotation = Number(rotationInput.value);
+  state.scale = Number(scaleInput.value);
+  state.mode = document.getElementById("mode").value;
+  state.tileGap = Number(tileGapInput.value);
 }
 
 function getSettings() {
   return {
-    text: document.getElementById("wmText").value.trim() || "Watermark",
-    fontSize: Number(document.getElementById("fontSize").value) || 48,
-    color: document.getElementById("wmColor").value,
-    opacity: Number(opacityInput.value),
-    rotation: (Number(rotationInput.value) * Math.PI) / 180,
-    position: document.getElementById("position").value,
-    margin: Number(document.getElementById("margin").value) || 0,
-    tileGap: Number(document.getElementById("tileGap").value) || 120,
+    ...state,
+    logoImage,
   };
 }
 
-async function renderImageWithWatermark(file, settings) {
+async function renderImageWithWatermark(file, settings, showGuide = false) {
   const image = await loadImage(file);
   const canvas = document.createElement("canvas");
   canvas.width = image.width;
   canvas.height = image.height;
   const ctx = canvas.getContext("2d");
   ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-  drawWatermark(ctx, canvas.width, canvas.height, settings);
+  drawWatermark(ctx, canvas.width, canvas.height, settings, showGuide);
   return canvas;
 }
 
-function drawWatermark(ctx, width, height, settings) {
-  const { text, fontSize, color, opacity, rotation, position, margin, tileGap } = settings;
-  if (!text) return;
+function drawWatermark(ctx, width, height, settings, showGuide) {
+  const { type, text, fontSize, fontFamily, color, opacity, rotation, scale, mode, tileGap } = settings;
+  if (!type) return;
 
   ctx.save();
-  ctx.font = `${fontSize}px sans-serif`;
-  ctx.textBaseline = "alphabetic";
-  ctx.fillStyle = color;
   ctx.globalAlpha = opacity;
 
-  const metrics = ctx.measureText(text);
-  const textWidth = metrics.width;
-  const textHeight = fontSize;
+  if (type === "text") {
+    ctx.font = `${fontSize}px ${fontFamily}`;
+    ctx.fillStyle = color;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
 
-  if (position === "tile") {
-    const patternCanvas = document.createElement("canvas");
-    const stepX = textWidth + tileGap;
-    const stepY = textHeight + tileGap;
-    patternCanvas.width = Math.max(1, Math.ceil(stepX));
-    patternCanvas.height = Math.max(1, Math.ceil(stepY));
-    const pctx = patternCanvas.getContext("2d");
-    pctx.font = ctx.font;
-    pctx.fillStyle = color;
-    pctx.globalAlpha = opacity;
-    pctx.textBaseline = "top";
-    pctx.fillText(text, tileGap / 2, tileGap / 2);
+    const metrics = ctx.measureText(text);
+    const textWidth = metrics.width;
+    const textHeight = fontSize;
 
-    const pattern = ctx.createPattern(patternCanvas, "repeat");
-    ctx.save();
-    ctx.globalAlpha = 1;
-    ctx.translate(width / 2, height / 2);
-    ctx.rotate(rotation);
-    ctx.translate(-width / 2, -height / 2);
-    ctx.fillStyle = pattern;
-    ctx.fillRect(-width, -height, width * 3, height * 3);
-    ctx.restore();
-  } else {
-    const point = getAnchorPoint(position, width, height, textWidth, textHeight, margin);
-    ctx.translate(point.x, point.y);
-    ctx.rotate(rotation);
-    ctx.fillText(text, 0, 0);
+    if (mode === "tile") {
+      const patternCanvas = document.createElement("canvas");
+      const stepX = textWidth + tileGap;
+      const stepY = textHeight + tileGap;
+      patternCanvas.width = Math.max(1, Math.ceil(stepX));
+      patternCanvas.height = Math.max(1, Math.ceil(stepY));
+      const pctx = patternCanvas.getContext("2d");
+      pctx.font = ctx.font;
+      pctx.fillStyle = color;
+      pctx.globalAlpha = opacity;
+      pctx.textAlign = "center";
+      pctx.textBaseline = "middle";
+      pctx.translate(patternCanvas.width / 2, patternCanvas.height / 2);
+      pctx.fillText(text, 0, 0);
+
+      const pattern = ctx.createPattern(patternCanvas, "repeat");
+      ctx.save();
+      ctx.globalAlpha = 1;
+      ctx.translate(width / 2, height / 2);
+      ctx.rotate((rotation * Math.PI) / 180);
+      ctx.translate(-width / 2, -height / 2);
+      ctx.fillStyle = pattern;
+      ctx.fillRect(-width, -height, width * 3, height * 3);
+      ctx.restore();
+      hint.textContent = "平铺模式无法拖动";
+    } else {
+      const center = getCenterPoint(width, height);
+      ctx.translate(center.x, center.y);
+      ctx.rotate((rotation * Math.PI) / 180);
+      ctx.fillText(text, 0, 0);
+      if (showGuide) drawGuide(ctx, textWidth, textHeight);
+      hint.textContent = "拖动水印调整位置";
+    }
+  }
+
+  if (type === "logo" && settings.logoImage) {
+    const img = settings.logoImage;
+    const scaledWidth = img.width * scale;
+    const scaledHeight = img.height * scale;
+    const center = getCenterPoint(width, height);
+    ctx.translate(center.x, center.y);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.drawImage(img, -scaledWidth / 2, -scaledHeight / 2, scaledWidth, scaledHeight);
+    if (showGuide) drawGuide(ctx, scaledWidth, scaledHeight);
+    hint.textContent = "拖动水印调整位置";
   }
 
   ctx.restore();
 }
 
-function getAnchorPoint(position, width, height, textWidth, textHeight, margin) {
-  switch (position) {
-    case "top-left":
-      return { x: margin, y: margin + textHeight };
-    case "top-right":
-      return { x: width - margin - textWidth, y: margin + textHeight };
-    case "bottom-left":
-      return { x: margin, y: height - margin };
-    case "bottom-right":
-      return { x: width - margin - textWidth, y: height - margin };
-    case "center":
-    default:
-      return { x: (width - textWidth) / 2, y: (height + textHeight) / 2 };
-  }
+function drawGuide(ctx, width, height) {
+  ctx.save();
+  ctx.globalAlpha = 0.8;
+  ctx.strokeStyle = "rgba(92, 200, 255, 0.8)";
+  ctx.setLineDash([6, 4]);
+  ctx.strokeRect(-width / 2, -height / 2, width, height);
+  ctx.restore();
+}
+
+function getCenterPoint(width, height) {
+  return {
+    x: state.position.x * width,
+    y: state.position.y * height,
+  };
 }
 
 function resolveOutputFormat(file) {
@@ -220,6 +385,71 @@ function loadImage(file) {
     };
     image.src = url;
   });
+}
+
+function getCanvasPoint(event) {
+  const rect = previewCanvas.getBoundingClientRect();
+  const scaleX = previewCanvas.width / rect.width;
+  const scaleY = previewCanvas.height / rect.height;
+  return {
+    x: (event.clientX - rect.left) * scaleX,
+    y: (event.clientY - rect.top) * scaleY,
+  };
+}
+
+function hitTest(event) {
+  const { type } = state;
+  if (!type) return null;
+
+  const pos = getCanvasPoint(event);
+  const center = getCenterPoint(previewCanvas.width, previewCanvas.height);
+  let width = 0;
+  let height = 0;
+
+  if (type === "text") {
+    const ctx = previewCanvas.getContext("2d");
+    ctx.font = `${state.fontSize}px ${state.fontFamily}`;
+    width = ctx.measureText(state.text).width;
+    height = state.fontSize;
+  } else if (type === "logo" && logoImage) {
+    width = logoImage.width * state.scale;
+    height = logoImage.height * state.scale;
+  }
+
+  if (!width || !height) return null;
+
+  const left = center.x - width / 2;
+  const top = center.y - height / 2;
+  const right = center.x + width / 2;
+  const bottom = center.y + height / 2;
+
+  if (pos.x >= left && pos.x <= right && pos.y >= top && pos.y <= bottom) {
+    return { offset: { x: pos.x - center.x, y: pos.y - center.y } };
+  }
+  return null;
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadLogoFromDataUrl(dataUrl) {
+  const img = new Image();
+  img.onload = () => {
+    logoImage = img;
+    if (!state.type) state.type = "logo";
+    renderPreview();
+  };
+  img.src = dataUrl;
 }
 
 previewBtn.disabled = true;

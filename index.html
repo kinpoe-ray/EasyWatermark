@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -7,97 +7,130 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="page">
-      <header class="hero">
-        <div>
-          <div class="tag">Pure Frontend</div>
-          <h1>Easy Watermark Web</h1>
-          <p>Add text watermarks to multiple images directly in your browser.</p>
+    <div class="app">
+      <header class="topbar">
+        <div class="topbar-left">
+          <span class="brand">Easy Watermark Web</span>
+          <span class="tag">Pure Frontend</span>
+        </div>
+        <div class="topbar-actions">
+          <button id="addTextBtn" class="ghost">Add Text</button>
+          <button id="addLogoBtn" class="ghost">Add Logo</button>
+          <button id="removeBtn" class="danger">Remove</button>
         </div>
       </header>
 
-      <section class="panel">
-        <div class="panel-title">1. Upload Images</div>
-        <input id="fileInput" type="file" accept="image/*" multiple />
-        <div id="fileSummary" class="muted">No files selected.</div>
-      </section>
+      <main class="layout">
+        <section class="panel">
+          <div class="section">
+            <div class="section-title">1. 上传图片</div>
+            <input id="fileInput" type="file" accept="image/*" multiple />
+            <div id="fileSummary" class="muted">未选择图片</div>
+          </div>
 
-      <section class="panel grid">
-        <div>
-          <div class="panel-title">2. Watermark Settings</div>
-          <div class="form-row">
-            <label for="wmText">Text</label>
-            <input id="wmText" type="text" placeholder="Your watermark" value="Sample Watermark" />
-          </div>
-          <div class="form-row">
-            <label for="fontSize">Font Size</label>
-            <input id="fontSize" type="number" min="8" max="300" value="48" />
-          </div>
-          <div class="form-row">
-            <label for="wmColor">Color</label>
-            <input id="wmColor" type="color" value="#ffffff" />
-          </div>
-          <div class="form-row">
-            <label for="opacity">Opacity</label>
-            <input id="opacity" type="range" min="0" max="1" step="0.05" value="0.35" />
-            <span id="opacityValue" class="value">0.35</span>
-          </div>
-          <div class="form-row">
-            <label for="rotation">Rotation</label>
-            <input id="rotation" type="range" min="-90" max="90" step="1" value="-20" />
-            <span id="rotationValue" class="value">-20°</span>
-          </div>
-          <div class="form-row">
-            <label for="position">Position</label>
-            <select id="position">
-              <option value="tile">Tile</option>
-              <option value="center">Center</option>
-              <option value="top-left">Top Left</option>
-              <option value="top-right">Top Right</option>
-              <option value="bottom-left">Bottom Left</option>
-              <option value="bottom-right">Bottom Right</option>
-            </select>
-          </div>
-          <div class="form-row">
-            <label for="margin">Margin</label>
-            <input id="margin" type="number" min="0" max="500" value="40" />
-          </div>
-          <div class="form-row">
-            <label for="tileGap">Tile Gap</label>
-            <input id="tileGap" type="number" min="0" max="800" value="180" />
-          </div>
-          <div class="panel-title">3. Export</div>
-          <div class="form-row">
-            <label for="format">Format</label>
-            <select id="format">
-              <option value="auto">Original</option>
-              <option value="png">PNG</option>
-              <option value="jpg">JPG</option>
-            </select>
-          </div>
-          <div class="form-row">
-            <label for="quality">JPG Quality</label>
-            <input id="quality" type="range" min="0.5" max="1" step="0.01" value="0.92" />
-            <span id="qualityValue" class="value">0.92</span>
-          </div>
-          <div class="actions">
-            <button id="previewBtn" class="ghost">Render Preview</button>
-            <button id="downloadBtn">Download ZIP</button>
-          </div>
-          <div id="progress" class="muted"></div>
-        </div>
+          <div class="section">
+            <div class="section-title">2. 水印设置</div>
 
-        <div class="preview">
-          <div class="panel-title">Preview</div>
+            <div class="form-row">
+              <label for="wmText">Text</label>
+              <input id="wmText" type="text" placeholder="Your watermark" />
+            </div>
+
+            <div class="form-row">
+              <label for="fontFamily">Font</label>
+              <select id="fontFamily">
+                <option value="Arial">Arial</option>
+                <option value="PingFang SC">PingFang SC</option>
+                <option value="Microsoft YaHei">Microsoft YaHei</option>
+                <option value="Noto Sans">Noto Sans</option>
+                <option value="Georgia">Georgia</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <label for="fontSize">Size</label>
+              <input id="fontSize" type="range" min="12" max="180" step="1" value="48" />
+              <span id="fontSizeValue" class="value">48</span>
+            </div>
+
+            <div class="form-row">
+              <label for="wmColor">Color</label>
+              <input id="wmColor" type="color" value="#ffffff" />
+            </div>
+
+            <div class="form-row">
+              <label for="opacity">Opacity</label>
+              <input id="opacity" type="range" min="0" max="1" step="0.05" value="0.35" />
+              <span id="opacityValue" class="value">0.35</span>
+            </div>
+
+            <div class="form-row">
+              <label for="rotation">Rotation</label>
+              <input id="rotation" type="range" min="-90" max="90" step="1" value="-20" />
+              <span id="rotationValue" class="value">-20°</span>
+            </div>
+
+            <div class="form-row">
+              <label for="scale">Scale</label>
+              <input id="scale" type="range" min="0.2" max="3" step="0.05" value="1" />
+              <span id="scaleValue" class="value">1.00</span>
+            </div>
+
+            <div class="form-row">
+              <label for="mode">Mode</label>
+              <select id="mode">
+                <option value="single">Single</option>
+                <option value="tile">Tile</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <label for="tileGap">Tile Gap</label>
+              <input id="tileGap" type="range" min="0" max="600" step="5" value="180" />
+              <span id="tileGapValue" class="value">180</span>
+            </div>
+
+            <div class="form-row">
+              <label for="logoInput">Logo</label>
+              <input id="logoInput" type="file" accept="image/*" />
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">3. 导出</div>
+            <div class="form-row">
+              <label for="format">Format</label>
+              <select id="format">
+                <option value="auto">Original</option>
+                <option value="png">PNG</option>
+                <option value="jpg">JPG</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label for="quality">JPG Quality</label>
+              <input id="quality" type="range" min="0.5" max="1" step="0.01" value="0.92" />
+              <span id="qualityValue" class="value">0.92</span>
+            </div>
+            <div class="actions">
+              <button id="previewBtn" class="ghost">Render Preview</button>
+              <button id="downloadBtn">Download ZIP</button>
+            </div>
+            <div id="progress" class="muted"></div>
+          </div>
+        </section>
+
+        <section class="preview">
+          <div class="preview-header">
+            <span>Preview</span>
+            <span class="muted" id="hint">拖动水印调整位置</span>
+          </div>
           <div class="canvas-wrap">
             <canvas id="previewCanvas"></canvas>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
-      <footer class="footer">
-        <div>All processing happens in your browser. No uploads.</div>
-      </footer>
+      <footer class="footer">全部处理在本地浏览器完成，不上传图片。</footer>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
