@@ -23,14 +23,14 @@
 
       <main class="layout">
         <section class="panel">
-          <div class="section">
-            <div class="section-title">1. 上传图片</div>
+          <div class="section section-collapsible" data-section="upload">
+            <button class="section-title section-toggle" type="button">1. 上传图片</button>
             <input id="fileInput" type="file" accept="image/*" multiple />
             <div id="fileSummary" class="muted">未选择图片</div>
           </div>
 
-          <div class="section">
-            <div class="section-title">2. 水印设置</div>
+          <div class="section section-collapsible" data-section="watermark">
+            <button class="section-title section-toggle" type="button">2. 水印设置</button>
             <div class="form-row">
               <label for="processMode">Mode</label>
               <select id="processMode">
@@ -125,8 +125,8 @@
             </div>
           </div>
 
-          <div class="section">
-            <div class="section-title">3. 导出</div>
+          <div class="section section-collapsible" data-section="export">
+            <button class="section-title section-toggle" type="button">3. 导出</button>
             <div class="actions">
               <button id="settingsBtn" class="ghost">Export Settings</button>
               <button id="previewBtn" class="ghost">Render Preview</button>
@@ -142,8 +142,10 @@
             <span>Preview</span>
             <span class="muted" id="hint">拖动水印调整位置</span>
           </div>
-          <div class="canvas-wrap">
-            <canvas id="previewCanvas"></canvas>
+          <div class="canvas-wrap" id="previewWrap">
+            <div class="preview-viewport" id="previewViewport">
+              <canvas id="previewCanvas"></canvas>
+            </div>
           </div>
         </section>
       </main>
@@ -152,6 +154,12 @@
         全部处理在本地浏览器完成，不上传图片。作者：
         <a class="author-link" href="https://x.com/kinpoe_ray" target="_blank" rel="noopener">@kinpoe_ray</a>
       </footer>
+    </div>
+
+    <div class="bottom-actions">
+      <button id="addTextBtnMobile" class="ghost">Add Text</button>
+      <button id="addLogoBtnMobile" class="ghost">Add Logo</button>
+      <button id="removeBtnMobile" class="danger">Remove</button>
     </div>
 
     <button id="helpBtn" class="help-btn">?</button>

@@ -109,6 +109,21 @@ body {
   margin-bottom: 12px;
 }
 
+.section-toggle {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 14px;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+}
+
+.section-collapsible.collapsed > *:not(.section-toggle) {
+  display: none;
+}
+
 .form-row {
   display: grid;
   grid-template-columns: 90px 1fr auto;
@@ -274,6 +289,15 @@ button:disabled {
   align-items: center;
   justify-content: center;
   padding: 10px;
+  overflow: hidden;
+}
+
+.preview-viewport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center;
+  touch-action: none;
 }
 
 canvas {
@@ -362,6 +386,10 @@ canvas {
   z-index: 30;
 }
 
+.bottom-actions {
+  display: none;
+}
+
 .help-body ol {
   margin: 0 0 12px;
   padding-left: 20px;
@@ -425,5 +453,39 @@ canvas {
   .modal-card {
     max-height: 85vh;
     overflow: auto;
+  }
+
+  .topbar-actions {
+    display: none;
+  }
+
+  .bottom-actions {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    padding: 10px;
+    background: rgba(16, 17, 20, 0.9);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    z-index: 25;
+    backdrop-filter: blur(12px);
+  }
+
+  .bottom-actions button {
+    flex: 1;
+  }
+
+  .section-toggle::after {
+    content: "▾";
+    float: right;
+    color: var(--muted);
+  }
+
+  .section-collapsible.collapsed .section-toggle::after {
+    content: "▸";
   }
 }

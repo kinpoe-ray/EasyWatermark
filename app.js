@@ -14,10 +14,14 @@ const exportSummary = document.getElementById("exportSummary");
 const helpBtn = document.getElementById("helpBtn");
 const helpModal = document.getElementById("helpModal");
 const closeHelp = document.getElementById("closeHelp");
+const previewViewport = document.getElementById("previewViewport");
 
 const addTextBtn = document.getElementById("addTextBtn");
 const addLogoBtn = document.getElementById("addLogoBtn");
 const removeBtn = document.getElementById("removeBtn");
+const addTextBtnMobile = document.getElementById("addTextBtnMobile");
+const addLogoBtnMobile = document.getElementById("addLogoBtnMobile");
+const removeBtnMobile = document.getElementById("removeBtnMobile");
 const processModeInput = document.getElementById("processMode");
 const removeThenAddInput = document.getElementById("removeThenAdd");
 
@@ -50,6 +54,7 @@ let activeImageIndex = 0;
 let logoImage = null;
 let isDragging = false;
 let dragOffset = { x: 0, y: 0 };
+let zoomState = { scale: 1, x: 0, y: 0, startDist: 0, startScale: 1 };
 
 const state = {
   processMode: "add",
@@ -198,6 +203,29 @@ helpModal.addEventListener("click", (event) => {
   if (event.target === helpModal) helpModal.classList.remove("show");
 });
 
+document.querySelectorAll(".section-toggle").forEach((toggle) => {
+  toggle.addEventListener("click", () => {
+    const section = toggle.closest(".section-collapsible");
+    if (!section) return;
+    section.classList.toggle("collapsed");
+  });
+});
+
+function applyMobileCollapse() {
+  const isMobile = window.matchMedia("(max-width: 640px)").matches;
+  document.querySelectorAll(".section-collapsible").forEach((section) => {
+    if (!isMobile) {
+      section.classList.remove("collapsed");
+      return;
+    }
+    const key = section.dataset.section;
+    section.classList.toggle("collapsed", key !== "upload");
+  });
+}
+
+applyMobileCollapse();
+window.addEventListener("resize", applyMobileCollapse);
+
 tileStyleEl.addEventListener("click", (event) => {
   const btn = event.target.closest("button[data-style]");
   if (!btn) return;
@@ -206,20 +234,20 @@ tileStyleEl.addEventListener("click", (event) => {
   renderPreview();
 });
 
-addTextBtn.addEventListener("click", () => {
-  state.type = "text";
-  renderPreview();
-});
+function bindLayerButton(button, type) {
+  if (!button) return;
+  button.addEventListener("click", () => {
+    state.type = type;
+    renderPreview();
+  });
+}
 
-addLogoBtn.addEventListener("click", () => {
-  state.type = "logo";
-  renderPreview();
-});
-
-removeBtn.addEventListener("click", () => {
-  state.type = null;
-  renderPreview();
-});
+bindLayerButton(addTextBtn, "text");
+bindLayerButton(addLogoBtn, "logo");
+bindLayerButton(removeBtn, null);
+bindLayerButton(addTextBtnMobile, "text");
+bindLayerButton(addLogoBtnMobile, "logo");
+bindLayerButton(removeBtnMobile, null);
 
 logoInput.addEventListener("change", async () => {
   const file = logoInput.files && logoInput.files[0];
@@ -315,6 +343,32 @@ previewCanvas.addEventListener("pointerup", (event) => {
   saveTemplate();
 });
 
+if (previewViewport) {
+  previewViewport.addEventListener("touchstart", (event) => {
+    if (event.touches.length === 2) {
+      zoomState.startDist = getTouchDistance(event.touches[0], event.touches[1]);
+      zoomState.startScale = zoomState.scale;
+    }
+  }, { passive: true });
+
+  previewViewport.addEventListener("touchmove", (event) => {
+    if (event.touches.length === 2) {
+      event.preventDefault();
+      const dist = getTouchDistance(event.touches[0], event.touches[1]);
+      const factor = dist / zoomState.startDist;
+      zoomState.scale = clamp(zoomState.startScale * factor, 0.6, 3);
+      applyZoom();
+    }
+  }, { passive: false });
+
+  previewViewport.addEventListener("touchend", () => {
+    if (previewViewport) previewViewport.style.transition = "transform 0.08s ease-out";
+    setTimeout(() => {
+      if (previewViewport) previewViewport.style.transition = "";
+    }, 120);
+  });
+}
+
 async function renderPreview() {
   if (files.length === 0) return;
   syncStateFromInputs();
@@ -323,6 +377,10 @@ async function renderPreview() {
   previewCanvas.height = canvas.height;
   const ctx = previewCanvas.getContext("2d");
   ctx.drawImage(canvas, 0, 0);
+  if (previewViewport) {
+    zoomState.scale = 1;
+    applyZoom();
+  }
   saveTemplate();
 }
 
@@ -779,6 +837,17 @@ function updateExportSummary() {
   if (state.export.renameMode === "sequence") renameLabel = `Sequence from ${state.export.sequenceStart || 1}`;
 
   exportSummary.textContent = `${formatLabel} · ${resizeLabel} · ${renameLabel}`;
+}
+
+function getTouchDistance(t1, t2) {
+  const dx = t1.clientX - t2.clientX;
+  const dy = t1.clientY - t2.clientY;
+  return Math.hypot(dx, dy);
+}
+
+function applyZoom() {
+  if (!previewViewport) return;
+  previewViewport.style.transform = `scale(${zoomState.scale})`;
 }
 
 function getRandomPosition(seedText) {
