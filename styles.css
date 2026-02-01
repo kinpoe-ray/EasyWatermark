@@ -322,6 +322,28 @@ canvas {
   margin-top: 12px;
 }
 
+.help-btn {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: rgba(16, 17, 20, 0.9);
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 30;
+}
+
+.help-body ol {
+  margin: 0 0 12px;
+  padding-left: 20px;
+  color: var(--text);
+  line-height: 1.6;
+}
+
 @media (max-width: 960px) {
   .layout {
     grid-template-columns: 1fr;

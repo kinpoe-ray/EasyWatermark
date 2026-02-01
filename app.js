@@ -11,6 +11,9 @@ const settingsModal = document.getElementById("settingsModal");
 const closeSettings = document.getElementById("closeSettings");
 const closeSettings2 = document.getElementById("closeSettings2");
 const exportSummary = document.getElementById("exportSummary");
+const helpBtn = document.getElementById("helpBtn");
+const helpModal = document.getElementById("helpModal");
+const closeHelp = document.getElementById("closeHelp");
 
 const addTextBtn = document.getElementById("addTextBtn");
 const addLogoBtn = document.getElementById("addLogoBtn");
@@ -187,6 +190,12 @@ closeSettings.addEventListener("click", () => settingsModal.classList.remove("sh
 closeSettings2.addEventListener("click", () => settingsModal.classList.remove("show"));
 settingsModal.addEventListener("click", (event) => {
   if (event.target === settingsModal) settingsModal.classList.remove("show");
+});
+
+helpBtn.addEventListener("click", () => helpModal.classList.add("show"));
+closeHelp.addEventListener("click", () => helpModal.classList.remove("show"));
+helpModal.addEventListener("click", (event) => {
+  if (event.target === helpModal) helpModal.classList.remove("show");
 });
 
 tileStyleEl.addEventListener("click", (event) => {

@@ -150,6 +150,28 @@
       <footer class="footer">全部处理在本地浏览器完成，不上传图片。</footer>
     </div>
 
+    <button id="helpBtn" class="help-btn">?</button>
+
+    <div id="helpModal" class="modal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <span>使用指南</span>
+          <button id="closeHelp" class="icon-btn">✕</button>
+        </div>
+        <div class="modal-body help-body">
+          <ol>
+            <li>上传图片后会显示预览。</li>
+            <li>选择模式：添加水印 / 去除 Gemini 水印。</li>
+            <li>需要去除后再添加时，勾选「Remove → Add」。</li>
+            <li>文本或 Logo 水印可拖拽调整位置（Single 模式）。</li>
+            <li>点击「Export Settings」配置格式、尺寸与命名。</li>
+            <li>点击「Download ZIP」批量导出。</li>
+          </ol>
+          <div class="muted">提示：去除仅对 Gemini 可见水印有效，不影响 SynthID。</div>
+        </div>
+      </div>
+    </div>
+
     <div id="settingsModal" class="modal">
       <div class="modal-card">
         <div class="modal-header">
