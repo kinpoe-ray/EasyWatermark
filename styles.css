@@ -51,6 +51,12 @@ body {
   font-weight: 700;
 }
 
+.brand-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+
 .tag {
   font-size: 11px;
   text-transform: uppercase;
@@ -277,6 +283,16 @@ canvas {
   color: var(--muted);
   padding: 16px;
   font-size: 12px;
+}
+
+.author-link {
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.author-link:hover {
+  color: var(--accent);
 }
 
 .modal {
