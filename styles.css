@@ -141,11 +141,39 @@ body {
   border-radius: 8px;
   font-weight: 700;
   cursor: pointer;
+  min-width: 44px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tile-btn.is-active {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.dot-grid {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  background-color: currentColor;
+}
+
+.dot-grid.grid-1 {
+  background-image: radial-gradient(circle, currentColor 2px, transparent 3px);
+  background-size: 100% 100%;
+  background-position: center;
+}
+
+.dot-grid.grid-2 {
+  background-image: radial-gradient(circle, currentColor 2px, transparent 3px);
+  background-size: 50% 50%;
+}
+
+.dot-grid.grid-3 {
+  background-image: radial-gradient(circle, currentColor 2px, transparent 3px);
+  background-size: 33.33% 33.33%;
 }
 
 .value {

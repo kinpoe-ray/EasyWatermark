@@ -87,9 +87,15 @@
             <div class="form-row">
               <label>Tile Style</label>
               <div class="tile-style" id="tileStyle">
-                <button type="button" data-style="single" class="tile-btn is-active">•</button>
-                <button type="button" data-style="grid-4" class="tile-btn">••</button>
-                <button type="button" data-style="grid-9" class="tile-btn">•••</button>
+                <button type="button" data-style="single" class="tile-btn is-active" aria-label="Single tile">
+                  <span class="dot-grid grid-1"></span>
+                </button>
+                <button type="button" data-style="grid-4" class="tile-btn" aria-label="2x2 tile">
+                  <span class="dot-grid grid-2"></span>
+                </button>
+                <button type="button" data-style="grid-9" class="tile-btn" aria-label="3x3 tile">
+                  <span class="dot-grid grid-3"></span>
+                </button>
               </div>
               <span class="value muted">密度</span>
             </div>
