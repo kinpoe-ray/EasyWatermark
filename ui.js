@@ -139,6 +139,24 @@ export function bindLayerButton(button, type, onChange) {
   });
 }
 
+export function syncLayerButtons() {
+  const isText = state.type === "text";
+  const isLogo = state.type === "logo";
+  const isRemove = !state.type;
+  [
+    [elements.addTextBtn, isText],
+    [elements.addLogoBtn, isLogo],
+    [elements.removeBtn, isRemove],
+    [elements.addTextBtnMobile, isText],
+    [elements.addLogoBtnMobile, isLogo],
+    [elements.removeBtnMobile, isRemove],
+  ].forEach(([btn, active]) => {
+    if (!btn) return;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+}
+
 export function applyMobileCollapse() {
   const isMobile = window.matchMedia("(max-width: 640px)").matches;
   document.querySelectorAll(".section-collapsible").forEach((section) => {

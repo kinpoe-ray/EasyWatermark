@@ -247,6 +247,20 @@ button.danger {
   color: var(--danger);
 }
 
+.topbar-actions button.is-active,
+.bottom-actions button.is-active {
+  border-color: var(--accent);
+  color: var(--text);
+  background: rgba(92, 200, 255, 0.15);
+}
+
+.topbar-actions button.is-active.danger,
+.bottom-actions button.is-active.danger {
+  border-color: var(--danger);
+  background: rgba(255, 107, 107, 0.15);
+  color: #ffd6d6;
+}
+
 .icon-btn {
   background: transparent;
   border: 1px solid var(--border);

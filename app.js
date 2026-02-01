@@ -18,6 +18,7 @@ import {
   updateExportSummary,
   setActiveTileStyle,
   bindLayerButton,
+  syncLayerButtons,
   applyMobileCollapse,
   setupSectionToggles,
   setupZoom,
@@ -57,6 +58,7 @@ async function renderPreview() {
   ctx.drawImage(canvas, 0, 0);
   runtime.zoom.scale = 1;
   applyZoom();
+  syncLayerButtons();
   syncHint();
   saveTemplate();
 }
@@ -300,6 +302,7 @@ function downloadBlob(blob, filename) {
 
 updateRangeDisplays();
 applyStateToInputs();
+syncLayerButtons();
 setupEvents();
 setupSectionToggles();
 applyMobileCollapse();
