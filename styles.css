@@ -14,11 +14,17 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  height: 100%;
+}
+
 body {
   margin: 0;
   background: radial-gradient(circle at 15% 10%, #1e2330, #101114 60%);
   color: var(--text);
   font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  min-height: 100vh;
 }
 
 .app {
@@ -51,17 +57,17 @@ body {
   font-weight: 700;
 }
 
+.brand-gradient {
+  background: linear-gradient(120deg, #5cc8ff, #ffb74a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
 .brand-logo {
   width: 28px;
   height: 28px;
   border-radius: 8px;
-}
-
-.tag {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  color: var(--accent);
 }
 
 .topbar-actions {
