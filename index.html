@@ -85,6 +85,16 @@
             </div>
 
             <div class="form-row">
+              <label>Tile Style</label>
+              <div class="tile-style" id="tileStyle">
+                <button type="button" data-style="single" class="tile-btn is-active">•</button>
+                <button type="button" data-style="grid-4" class="tile-btn">••</button>
+                <button type="button" data-style="grid-9" class="tile-btn">•••</button>
+              </div>
+              <span class="value muted">密度</span>
+            </div>
+
+            <div class="form-row">
               <label for="tileGap">Tile Gap</label>
               <input id="tileGap" type="range" min="0" max="600" step="5" value="180" />
               <span id="tileGapValue" class="value">180</span>

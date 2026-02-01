@@ -23,6 +23,7 @@ const scaleInput = document.getElementById("scale");
 const scaleValue = document.getElementById("scaleValue");
 const tileGapInput = document.getElementById("tileGap");
 const tileGapValue = document.getElementById("tileGapValue");
+const tileStyleEl = document.getElementById("tileStyle");
 
 const STORAGE_KEY = "easy-watermark-template";
 
@@ -42,6 +43,7 @@ const state = {
   rotation: -20,
   scale: 1,
   mode: "single",
+  tileStyle: "single",
   tileGap: 180,
   position: { x: 0.5, y: 0.5 },
 };
@@ -88,6 +90,7 @@ function applyStateToInputs() {
   scaleInput.value = state.scale;
   document.getElementById("mode").value = state.mode;
   tileGapInput.value = state.tileGap;
+  setActiveTileStyle(state.tileStyle);
   updateRangeDisplays();
 }
 
@@ -108,6 +111,14 @@ applyStateToInputs();
     syncStateFromInputs();
     renderPreview();
   });
+});
+
+tileStyleEl.addEventListener("click", (event) => {
+  const btn = event.target.closest("button[data-style]");
+  if (!btn) return;
+  state.tileStyle = btn.dataset.style;
+  setActiveTileStyle(state.tileStyle);
+  renderPreview();
 });
 
 addTextBtn.addEventListener("click", () => {
@@ -255,7 +266,7 @@ async function renderImageWithWatermark(file, settings, showGuide = false) {
 }
 
 function drawWatermark(ctx, width, height, settings, showGuide) {
-  const { type, text, fontSize, fontFamily, color, opacity, rotation, scale, mode, tileGap } = settings;
+  const { type, text, fontSize, fontFamily, color, opacity, rotation, scale, mode, tileGap, tileStyle } = settings;
   if (!type) return;
 
   ctx.save();
@@ -283,8 +294,7 @@ function drawWatermark(ctx, width, height, settings, showGuide) {
       pctx.globalAlpha = opacity;
       pctx.textAlign = "center";
       pctx.textBaseline = "middle";
-      pctx.translate(patternCanvas.width / 2, patternCanvas.height / 2);
-      pctx.fillText(text, 0, 0);
+      drawTilePattern(pctx, text, patternCanvas.width, patternCanvas.height, tileStyle);
 
       const pattern = ctx.createPattern(patternCanvas, "repeat");
       ctx.save();
@@ -310,12 +320,35 @@ function drawWatermark(ctx, width, height, settings, showGuide) {
     const img = settings.logoImage;
     const scaledWidth = img.width * scale;
     const scaledHeight = img.height * scale;
-    const center = getCenterPoint(width, height);
-    ctx.translate(center.x, center.y);
-    ctx.rotate((rotation * Math.PI) / 180);
-    ctx.drawImage(img, -scaledWidth / 2, -scaledHeight / 2, scaledWidth, scaledHeight);
-    if (showGuide) drawGuide(ctx, scaledWidth, scaledHeight);
-    hint.textContent = "拖动水印调整位置";
+
+    if (mode === "tile") {
+      const patternCanvas = document.createElement("canvas");
+      const stepX = scaledWidth + tileGap;
+      const stepY = scaledHeight + tileGap;
+      patternCanvas.width = Math.max(1, Math.ceil(stepX));
+      patternCanvas.height = Math.max(1, Math.ceil(stepY));
+      const pctx = patternCanvas.getContext("2d");
+      pctx.globalAlpha = opacity;
+      drawTileImagePattern(pctx, img, scaledWidth, scaledHeight, patternCanvas.width, patternCanvas.height, tileStyle);
+
+      const pattern = ctx.createPattern(patternCanvas, "repeat");
+      ctx.save();
+      ctx.globalAlpha = 1;
+      ctx.translate(width / 2, height / 2);
+      ctx.rotate((rotation * Math.PI) / 180);
+      ctx.translate(-width / 2, -height / 2);
+      ctx.fillStyle = pattern;
+      ctx.fillRect(-width, -height, width * 3, height * 3);
+      ctx.restore();
+      hint.textContent = "平铺模式无法拖动";
+    } else {
+      const center = getCenterPoint(width, height);
+      ctx.translate(center.x, center.y);
+      ctx.rotate((rotation * Math.PI) / 180);
+      ctx.drawImage(img, -scaledWidth / 2, -scaledHeight / 2, scaledWidth, scaledHeight);
+      if (showGuide) drawGuide(ctx, scaledWidth, scaledHeight);
+      hint.textContent = "拖动水印调整位置";
+    }
   }
 
   ctx.restore();
@@ -328,6 +361,43 @@ function drawGuide(ctx, width, height) {
   ctx.setLineDash([6, 4]);
   ctx.strokeRect(-width / 2, -height / 2, width, height);
   ctx.restore();
+}
+
+function drawTilePattern(ctx, text, width, height, style) {
+  const positions = getTilePositions(width, height, style);
+  positions.forEach((pos) => {
+    ctx.fillText(text, pos.x, pos.y);
+  });
+}
+
+function drawTileImagePattern(ctx, img, scaledWidth, scaledHeight, width, height, style) {
+  const positions = getTilePositions(width, height, style);
+  positions.forEach((pos) => {
+    ctx.drawImage(img, pos.x - scaledWidth / 2, pos.y - scaledHeight / 2, scaledWidth, scaledHeight);
+  });
+}
+
+function getTilePositions(width, height, style) {
+  if (style === "grid-9") {
+    return gridPositions(width, height, 3);
+  }
+  if (style === "grid-4") {
+    return gridPositions(width, height, 2);
+  }
+  return [{ x: width / 2, y: height / 2 }];
+}
+
+function gridPositions(width, height, count) {
+  const positions = [];
+  for (let row = 0; row < count; row += 1) {
+    for (let col = 0; col < count; col += 1) {
+      positions.push({
+        x: ((col + 0.5) / count) * width,
+        y: ((row + 0.5) / count) * height,
+      });
+    }
+  }
+  return positions;
 }
 
 function getCenterPoint(width, height) {
@@ -431,6 +501,13 @@ function hitTest(event) {
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
+}
+
+function setActiveTileStyle(style) {
+  if (!tileStyleEl) return;
+  tileStyleEl.querySelectorAll("button").forEach((btn) => {
+    btn.classList.toggle("is-active", btn.dataset.style === style);
+  });
 }
 
 function fileToDataUrl(file) {
