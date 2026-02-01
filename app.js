@@ -127,6 +127,8 @@ applyStateToInputs();
 removeThenAddInput.addEventListener("change", () => {
   if (removeThenAddInput.checked) {
     processModeInput.value = "remove-gemini";
+  } else {
+    processModeInput.value = "add";
   }
   syncStateFromInputs();
   renderPreview();
