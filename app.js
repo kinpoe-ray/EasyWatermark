@@ -117,11 +117,19 @@ applyStateToInputs();
   });
 });
 
-["wmText", "fontFamily", "wmColor", "mode", "processMode", "removeThenAdd"].forEach((id) => {
+["wmText", "fontFamily", "wmColor", "mode", "processMode"].forEach((id) => {
   document.getElementById(id).addEventListener("input", () => {
     syncStateFromInputs();
     renderPreview();
   });
+});
+
+removeThenAddInput.addEventListener("change", () => {
+  if (removeThenAddInput.checked) {
+    processModeInput.value = "remove-gemini";
+  }
+  syncStateFromInputs();
+  renderPreview();
 });
 
 tileStyleEl.addEventListener("click", (event) => {
