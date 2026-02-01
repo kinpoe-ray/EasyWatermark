@@ -17,11 +17,13 @@
 html,
 body {
   height: 100%;
+  background-color: #101114;
 }
 
 body {
   margin: 0;
   background: radial-gradient(circle at 15% 10%, #1e2330, #101114 60%);
+  background-attachment: fixed;
   color: var(--text);
   font-family: "Space Grotesk", "Segoe UI", sans-serif;
   min-height: 100vh;
@@ -31,6 +33,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: transparent;
 }
 
 .topbar {
