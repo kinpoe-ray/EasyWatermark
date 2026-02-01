@@ -11,6 +11,7 @@ const addTextBtn = document.getElementById("addTextBtn");
 const addLogoBtn = document.getElementById("addLogoBtn");
 const removeBtn = document.getElementById("removeBtn");
 const processModeInput = document.getElementById("processMode");
+const removeThenAddInput = document.getElementById("removeThenAdd");
 
 const opacityInput = document.getElementById("opacity");
 const opacityValue = document.getElementById("opacityValue");
@@ -37,6 +38,7 @@ let dragOffset = { x: 0, y: 0 };
 
 const state = {
   processMode: "add",
+  removeThenAdd: false,
   type: "text",
   text: "@watermark",
   fontFamily: "Arial",
@@ -90,6 +92,7 @@ function saveTemplate() {
 function applyStateToInputs() {
   document.getElementById("wmText").value = state.text;
   processModeInput.value = state.processMode;
+  removeThenAddInput.checked = state.removeThenAdd;
   document.getElementById("fontFamily").value = state.fontFamily;
   fontSizeInput.value = state.fontSize;
   document.getElementById("wmColor").value = state.color;
@@ -114,7 +117,7 @@ applyStateToInputs();
   });
 });
 
-["wmText", "fontFamily", "wmColor", "mode", "processMode"].forEach((id) => {
+["wmText", "fontFamily", "wmColor", "mode", "processMode", "removeThenAdd"].forEach((id) => {
   document.getElementById(id).addEventListener("input", () => {
     syncStateFromInputs();
     renderPreview();
@@ -205,7 +208,8 @@ downloadBtn.addEventListener("click", async () => {
 });
 
 previewCanvas.addEventListener("pointerdown", (event) => {
-  if (!files.length || state.mode === "tile" || !state.type || state.processMode !== "add") return;
+  if (!files.length || state.mode === "tile" || !state.type) return;
+  if (state.processMode === "remove-gemini" && !state.removeThenAdd) return;
   const hit = hitTest(event);
   if (!hit) return;
   isDragging = true;
@@ -245,6 +249,7 @@ async function renderPreview() {
 
 function syncStateFromInputs() {
   state.processMode = processModeInput.value;
+  state.removeThenAdd = removeThenAddInput.checked;
   state.text = document.getElementById("wmText").value.trim() || "Watermark";
   state.fontFamily = document.getElementById("fontFamily").value;
   state.fontSize = Number(fontSizeInput.value) || 48;
@@ -272,8 +277,12 @@ async function renderImageWithWatermark(file, settings, showGuide = false) {
   ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
   if (settings.processMode === "remove-gemini") {
     await removeGeminiWatermark(canvas);
-    hint.textContent = "Gemini 可见水印移除（不影响 SynthID）";
-  } else {
+    if (!settings.removeThenAdd) {
+      hint.textContent = "Gemini 可见水印移除（不影响 SynthID）";
+      return canvas;
+    }
+  }
+  if (settings.processMode === "add" || settings.removeThenAdd) {
     drawWatermark(ctx, canvas.width, canvas.height, settings, showGuide);
   }
   return canvas;
