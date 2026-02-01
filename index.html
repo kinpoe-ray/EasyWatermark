@@ -30,6 +30,14 @@
 
           <div class="section">
             <div class="section-title">2. 水印设置</div>
+            <div class="form-row">
+              <label for="processMode">Mode</label>
+              <select id="processMode">
+                <option value="add">Add Watermark</option>
+                <option value="remove-gemini">Remove Gemini Watermark</option>
+              </select>
+            </div>
+            <div class="muted">仅移除可见 Gemini 水印，不影响 SynthID。</div>
 
             <div class="form-row">
               <label for="wmText">Text</label>
@@ -149,6 +157,7 @@
       <footer class="footer">全部处理在本地浏览器完成，不上传图片。</footer>
     </div>
 
+    <script src="gemini-assets.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="app.js"></script>
   </body>

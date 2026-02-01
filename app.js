@@ -10,6 +10,7 @@ const hint = document.getElementById("hint");
 const addTextBtn = document.getElementById("addTextBtn");
 const addLogoBtn = document.getElementById("addLogoBtn");
 const removeBtn = document.getElementById("removeBtn");
+const processModeInput = document.getElementById("processMode");
 
 const opacityInput = document.getElementById("opacity");
 const opacityValue = document.getElementById("opacityValue");
@@ -26,6 +27,7 @@ const tileGapValue = document.getElementById("tileGapValue");
 const tileStyleEl = document.getElementById("tileStyle");
 
 const STORAGE_KEY = "easy-watermark-template";
+const GEMINI_LOGO_VALUE = 255;
 
 let files = [];
 let activeImageIndex = 0;
@@ -34,6 +36,7 @@ let isDragging = false;
 let dragOffset = { x: 0, y: 0 };
 
 const state = {
+  processMode: "add",
   type: "text",
   text: "@watermark",
   fontFamily: "Arial",
@@ -47,6 +50,10 @@ const state = {
   tileGap: 180,
   position: { x: 0.5, y: 0.5 },
 };
+
+let geminiAlpha48 = null;
+let geminiAlpha96 = null;
+let geminiAlphaPromise = null;
 
 function updateRangeDisplays() {
   opacityValue.textContent = opacityInput.value;
@@ -82,6 +89,7 @@ function saveTemplate() {
 
 function applyStateToInputs() {
   document.getElementById("wmText").value = state.text;
+  processModeInput.value = state.processMode;
   document.getElementById("fontFamily").value = state.fontFamily;
   fontSizeInput.value = state.fontSize;
   document.getElementById("wmColor").value = state.color;
@@ -106,7 +114,7 @@ applyStateToInputs();
   });
 });
 
-["wmText", "fontFamily", "wmColor", "mode"].forEach((id) => {
+["wmText", "fontFamily", "wmColor", "mode", "processMode"].forEach((id) => {
   document.getElementById(id).addEventListener("input", () => {
     syncStateFromInputs();
     renderPreview();
@@ -197,7 +205,7 @@ downloadBtn.addEventListener("click", async () => {
 });
 
 previewCanvas.addEventListener("pointerdown", (event) => {
-  if (!files.length || state.mode === "tile" || !state.type) return;
+  if (!files.length || state.mode === "tile" || !state.type || state.processMode !== "add") return;
   const hit = hitTest(event);
   if (!hit) return;
   isDragging = true;
@@ -236,6 +244,7 @@ async function renderPreview() {
 }
 
 function syncStateFromInputs() {
+  state.processMode = processModeInput.value;
   state.text = document.getElementById("wmText").value.trim() || "Watermark";
   state.fontFamily = document.getElementById("fontFamily").value;
   state.fontSize = Number(fontSizeInput.value) || 48;
@@ -261,7 +270,12 @@ async function renderImageWithWatermark(file, settings, showGuide = false) {
   canvas.height = image.height;
   const ctx = canvas.getContext("2d");
   ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-  drawWatermark(ctx, canvas.width, canvas.height, settings, showGuide);
+  if (settings.processMode === "remove-gemini") {
+    await removeGeminiWatermark(canvas);
+    hint.textContent = "Gemini 可见水印移除（不影响 SynthID）";
+  } else {
+    drawWatermark(ctx, canvas.width, canvas.height, settings, showGuide);
+  }
   return canvas;
 }
 
@@ -507,6 +521,99 @@ function setActiveTileStyle(style) {
   if (!tileStyleEl) return;
   tileStyleEl.querySelectorAll("button").forEach((btn) => {
     btn.classList.toggle("is-active", btn.dataset.style === style);
+  });
+}
+
+async function removeGeminiWatermark(canvas) {
+  await ensureGeminiAlphaMaps();
+  if (!geminiAlpha48 || !geminiAlpha96) return;
+
+  const ctx = canvas.getContext("2d");
+  const { width, height } = canvas;
+  const { size, margin } = getGeminiConfig(width, height);
+  const alpha = size === 96 ? geminiAlpha96 : geminiAlpha48;
+
+  const startX = Math.max(0, width - margin - size);
+  const startY = Math.max(0, height - margin - size);
+
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+
+  const alphaThreshold = 0.002;
+  const maxAlpha = 0.99;
+
+  for (let row = 0; row < size; row += 1) {
+    for (let col = 0; col < size; col += 1) {
+      const ax = startX + col;
+      const ay = startY + row;
+      if (ax < 0 || ay < 0 || ax >= width || ay >= height) continue;
+
+      let a = alpha[row * size + col];
+      if (a < alphaThreshold) continue;
+      if (a > maxAlpha) a = maxAlpha;
+
+      const idx = (ay * width + ax) * 4;
+      for (let c = 0; c < 3; c += 1) {
+        const watermarked = data[idx + c];
+        const original = (watermarked - a * GEMINI_LOGO_VALUE) / (1 - a);
+        data[idx + c] = clamp(Math.round(original), 0, 255);
+      }
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+}
+
+function getGeminiConfig(width, height) {
+  if (width > 1024 && height > 1024) {
+    return { size: 96, margin: 64 };
+  }
+  return { size: 48, margin: 32 };
+}
+
+async function ensureGeminiAlphaMaps() {
+  if (geminiAlpha48 && geminiAlpha96) return;
+  if (!geminiAlphaPromise) {
+    geminiAlphaPromise = Promise.all([
+      buildAlphaMap(window.GEMINI_BG_48),
+      buildAlphaMap(window.GEMINI_BG_96),
+    ]).then(([map48, map96]) => {
+      geminiAlpha48 = map48;
+      geminiAlpha96 = map96;
+    });
+  }
+  await geminiAlphaPromise;
+}
+
+async function buildAlphaMap(dataUrl) {
+  const img = await loadImageFromUrl(dataUrl);
+  const canvas = document.createElement("canvas");
+  canvas.width = img.width;
+  canvas.height = img.height;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0);
+  const imageData = ctx.getImageData(0, 0, img.width, img.height);
+  const data = imageData.data;
+  const alpha = new Float32Array(img.width * img.height);
+
+  for (let i = 0; i < alpha.length; i += 1) {
+    const idx = i * 4;
+    const r = data[idx];
+    const g = data[idx + 1];
+    const b = data[idx + 2];
+    const max = Math.max(r, g, b);
+    alpha[i] = max / 255;
+  }
+
+  return alpha;
+}
+
+function loadImageFromUrl(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Failed to load asset image"));
+    img.src = url;
   });
 }
 
