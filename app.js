@@ -8,8 +8,18 @@ import {
   resolveOutputFormat,
   getOutputName,
   getRandomPosition,
+  resetImageCache,
 } from "./core.js";
-import { loadTemplate, saveTemplate } from "./storage.js";
+import {
+  BUILTIN_TEMPLATES,
+  loadTemplate,
+  saveTemplate,
+  getSavedTemplates,
+  addTemplate,
+  removeTemplate,
+  touchRecentTemplate,
+  getRecentTemplateIds,
+} from "./storage.js";
 import {
   elements,
   updateRangeDisplays,
@@ -19,6 +29,8 @@ import {
   setActiveTileStyle,
   bindLayerButton,
   syncLayerButtons,
+  setLayerButtonsEnabled,
+  setWatermarkControlsEnabled,
   applyMobileCollapse,
   setupSectionToggles,
   setupZoom,
@@ -36,6 +48,29 @@ function updateHint(message) {
   elements.hint.textContent = message;
 }
 
+let renderQueued = false;
+
+function scheduleRenderPreview() {
+  if (renderQueued) return;
+  renderQueued = true;
+  requestAnimationFrame(() => {
+    renderQueued = false;
+    renderPreview();
+  });
+}
+
+function updateControlAvailability() {
+  const removeOnly = state.processMode === "remove-gemini" && !state.removeThenAdd;
+  setWatermarkControlsEnabled(!removeOnly);
+  setLayerButtonsEnabled(!removeOnly);
+}
+
+function syncAdvancedVisibility() {
+  if (!elements.advancedControls) return;
+  const shouldOpen = state.mode === "tile" || state.type === "logo";
+  elements.advancedControls.classList.toggle("is-open", shouldOpen);
+}
+
 function syncHint() {
   if (state.processMode === "remove-gemini" && !state.removeThenAdd) {
     updateHint("Gemini 可见水印移除（不影响 SynthID）");
@@ -51,7 +86,11 @@ function syncHint() {
 async function renderPreview() {
   if (runtime.files.length === 0) return;
   syncStateFromInputs();
+  updateControlAvailability();
+  syncAdvancedVisibility();
+  const token = (runtime.renderToken += 1);
   const canvas = await renderImageWithWatermark(runtime.files[runtime.activeImageIndex], getSettings(), true);
+  if (token !== runtime.renderToken) return;
   elements.previewCanvas.width = canvas.width;
   elements.previewCanvas.height = canvas.height;
   const ctx = elements.previewCanvas.getContext("2d");
@@ -69,16 +108,42 @@ function formatProgress(index, total, name) {
   return `处理中 ${index}/${total} (${percent}%)${safeName}`;
 }
 
+function setProgress(percent, text) {
+  if (elements.progressFill) {
+    elements.progressFill.style.width = `${percent}%`;
+  }
+  elements.progress.textContent = text || "";
+}
+
+function resetProgress() {
+  setProgress(0, "");
+  if (elements.exportReport) elements.exportReport.textContent = "";
+  if (elements.exportThumb) elements.exportThumb.removeAttribute("src");
+}
+
+function updateExportThumb(canvas) {
+  if (!elements.exportThumb) return;
+  const maxSize = 160;
+  const scale = Math.min(1, maxSize / Math.max(canvas.width, canvas.height));
+  const thumbCanvas = document.createElement("canvas");
+  thumbCanvas.width = Math.max(1, Math.round(canvas.width * scale));
+  thumbCanvas.height = Math.max(1, Math.round(canvas.height * scale));
+  const ctx = thumbCanvas.getContext("2d");
+  ctx.drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
+  elements.exportThumb.src = thumbCanvas.toDataURL("image/jpeg", 0.72);
+}
+
 async function buildOutputs(onEach) {
   const originalPosition = { ...state.position };
   let index = 0;
   for (const file of runtime.files) {
     index += 1;
-    elements.progress.textContent = formatProgress(index, runtime.files.length, file.name);
+    setProgress(Math.round((index / runtime.files.length) * 100), formatProgress(index, runtime.files.length, file.name));
     if (state.export.randomizePosition && state.mode === "single") {
       state.position = getRandomPosition(file.name);
     }
     const canvas = await renderImageWithWatermark(file, getSettings());
+    updateExportThumb(canvas);
     const { type, quality, ext } = resolveOutputFormat(file);
     const blob = await canvasToBlob(canvas, type, quality);
     const fileName = getOutputName(file, index - 1, ext);
@@ -106,6 +171,104 @@ async function downloadImagesIndividually() {
   });
 }
 
+function getAllTemplates() {
+  return [...BUILTIN_TEMPLATES, ...getSavedTemplates()];
+}
+
+function findTemplateById(id) {
+  return getAllTemplates().find((tpl) => tpl.id === id);
+}
+
+function renderTemplateSelect(selectedId) {
+  if (!elements.templateSelect) return;
+  const templates = getAllTemplates();
+  elements.templateSelect.innerHTML = "";
+
+  const builtinGroup = document.createElement("optgroup");
+  builtinGroup.label = "内置模板";
+  BUILTIN_TEMPLATES.forEach((tpl) => {
+    const option = document.createElement("option");
+    option.value = tpl.id;
+    option.textContent = tpl.name;
+    builtinGroup.appendChild(option);
+  });
+  elements.templateSelect.appendChild(builtinGroup);
+
+  const customGroup = document.createElement("optgroup");
+  customGroup.label = "自定义模板";
+  templates.filter((tpl) => !tpl.id.startsWith("builtin")).forEach((tpl) => {
+    const option = document.createElement("option");
+    option.value = tpl.id;
+    option.textContent = tpl.name;
+    customGroup.appendChild(option);
+  });
+  elements.templateSelect.appendChild(customGroup);
+
+  elements.templateSelect.value = selectedId || BUILTIN_TEMPLATES[0].id;
+}
+
+function renderRecentTemplates() {
+  if (!elements.recentTemplates) return;
+  elements.recentTemplates.innerHTML = "";
+  const recentIds = getRecentTemplateIds();
+  const templates = getAllTemplates();
+  recentIds
+    .map((id) => templates.find((tpl) => tpl.id === id))
+    .filter(Boolean)
+    .forEach((tpl) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = tpl.name;
+      btn.addEventListener("click", () => {
+        applyTemplateById(tpl.id);
+        elements.templateSelect.value = tpl.id;
+      });
+      elements.recentTemplates.appendChild(btn);
+    });
+}
+
+function applyTemplateById(id) {
+  const tpl = findTemplateById(id);
+  if (!tpl) return;
+  const data = tpl.data || {};
+  Object.assign(state, data, { processMode: "add", removeThenAdd: false });
+  applyStateToInputs();
+  updateExportSummary();
+  if (data.logoDataUrl) {
+    state.logoDataUrl = data.logoDataUrl;
+    loadLogoFromDataUrl(data.logoDataUrl, scheduleRenderPreview);
+  } else {
+    state.logoDataUrl = null;
+    runtime.logoImage = null;
+    scheduleRenderPreview();
+  }
+  touchRecentTemplate(id);
+  renderRecentTemplates();
+}
+
+function updateTemplateActions(id) {
+  if (!elements.deleteTemplateBtn) return;
+  const isBuiltin = id && id.startsWith("builtin");
+  elements.deleteTemplateBtn.disabled = !!isBuiltin;
+}
+
+function createTemplateSnapshot() {
+  const snapshot = {
+    ...state,
+    processMode: "add",
+    removeThenAdd: false,
+  };
+  if (runtime.logoImage && state.logoDataUrl) {
+    snapshot.logoDataUrl = state.logoDataUrl;
+  }
+  return snapshot;
+}
+
+function updateExportReport(message) {
+  if (!elements.exportReport) return;
+  elements.exportReport.textContent = message || "";
+}
+
 function setupEvents() {
   [
     elements.opacityInput,
@@ -118,14 +281,15 @@ function setupEvents() {
     input.addEventListener("input", () => {
       syncStateFromInputs();
       updateRangeDisplays();
-      renderPreview();
+      scheduleRenderPreview();
     });
   });
 
   ["wmText", "fontFamily", "wmColor", "mode", "processMode"].forEach((id) => {
     document.getElementById(id).addEventListener("input", () => {
       syncStateFromInputs();
-      renderPreview();
+      updateExportSummary();
+      scheduleRenderPreview();
     });
   });
 
@@ -144,6 +308,11 @@ function setupEvents() {
     });
   });
 
+  elements.exportMethod.addEventListener("change", () => {
+    syncStateFromInputs();
+    updateExportSummary();
+  });
+
   elements.removeThenAddInput.addEventListener("change", () => {
     if (elements.removeThenAddInput.checked) {
       elements.processModeInput.value = "remove-gemini";
@@ -151,7 +320,8 @@ function setupEvents() {
       elements.processModeInput.value = "add";
     }
     syncStateFromInputs();
-    renderPreview();
+    updateExportSummary();
+    scheduleRenderPreview();
   });
 
   elements.settingsBtn.addEventListener("click", () => elements.settingsModal.classList.add("show"));
@@ -167,37 +337,73 @@ function setupEvents() {
     if (event.target === elements.helpModal) elements.helpModal.classList.remove("show");
   });
 
+  elements.advancedToggle.addEventListener("click", () => {
+    elements.advancedControls.classList.toggle("is-open");
+  });
+
+  elements.templateSelect.addEventListener("change", (event) => {
+    const id = event.target.value;
+    applyTemplateById(id);
+    updateTemplateActions(id);
+  });
+
+  elements.saveTemplateBtn.addEventListener("click", () => {
+    const name = elements.templateNameInput.value.trim();
+    if (!name) return;
+    const snapshot = createTemplateSnapshot();
+    const template = {
+      id: `custom-${Date.now()}`,
+      name,
+      data: snapshot,
+    };
+    addTemplate(template);
+    elements.templateNameInput.value = "";
+    renderTemplateSelect(template.id);
+    updateTemplateActions(template.id);
+    renderRecentTemplates();
+  });
+
+  elements.deleteTemplateBtn.addEventListener("click", () => {
+    const id = elements.templateSelect.value;
+    if (!id || id.startsWith("builtin")) return;
+    removeTemplate(id);
+    renderTemplateSelect(BUILTIN_TEMPLATES[0].id);
+    updateTemplateActions(BUILTIN_TEMPLATES[0].id);
+    renderRecentTemplates();
+  });
+
   elements.tileStyleEl.addEventListener("click", (event) => {
     const btn = event.target.closest("button[data-style]");
     if (!btn) return;
     state.tileStyle = btn.dataset.style;
     setActiveTileStyle(state.tileStyle);
-    renderPreview();
+    scheduleRenderPreview();
   });
 
-  bindLayerButton(elements.addTextBtn, "text", renderPreview);
-  bindLayerButton(elements.addLogoBtn, "logo", renderPreview);
-  bindLayerButton(elements.removeBtn, null, renderPreview);
-  bindLayerButton(elements.addTextBtnMobile, "text", renderPreview);
-  bindLayerButton(elements.addLogoBtnMobile, "logo", renderPreview);
-  bindLayerButton(elements.removeBtnMobile, null, renderPreview);
+  bindLayerButton(elements.addTextBtn, "text", scheduleRenderPreview);
+  bindLayerButton(elements.addLogoBtn, "logo", scheduleRenderPreview);
+  bindLayerButton(elements.removeBtn, null, scheduleRenderPreview);
+  bindLayerButton(elements.addTextBtnMobile, "text", scheduleRenderPreview);
+  bindLayerButton(elements.addLogoBtnMobile, "logo", scheduleRenderPreview);
+  bindLayerButton(elements.removeBtnMobile, null, scheduleRenderPreview);
 
   elements.logoInput.addEventListener("change", async () => {
     const file = elements.logoInput.files && elements.logoInput.files[0];
     if (!file) return;
     const dataUrl = await fileToDataUrl(file);
     state.logoDataUrl = dataUrl;
-    loadLogoFromDataUrl(dataUrl, renderPreview);
+    loadLogoFromDataUrl(dataUrl, scheduleRenderPreview);
   });
 
   elements.fileInput.addEventListener("change", () => {
+    resetImageCache();
+    resetProgress();
     runtime.files = Array.from(elements.fileInput.files || []);
     runtime.activeImageIndex = 0;
     if (runtime.files.length === 0) {
       elements.fileSummary.textContent = "未选择图片";
       elements.downloadBtn.disabled = true;
       elements.previewBtn.disabled = true;
-      elements.downloadImagesBtn.disabled = true;
       return;
     }
 
@@ -206,8 +412,7 @@ function setupEvents() {
     elements.fileSummary.textContent = `${runtime.files.length} 张图片 (${sizeMb} MB)`;
     elements.downloadBtn.disabled = false;
     elements.previewBtn.disabled = false;
-    elements.downloadImagesBtn.disabled = false;
-    renderPreview();
+    scheduleRenderPreview();
   });
 
   elements.previewBtn.addEventListener("click", renderPreview);
@@ -216,55 +421,43 @@ function setupEvents() {
     if (runtime.files.length === 0) return;
     elements.downloadBtn.disabled = true;
     elements.previewBtn.disabled = true;
-    elements.downloadImagesBtn.disabled = true;
-    elements.progress.textContent = "开始渲染...";
+    setProgress(0, "开始渲染...");
+    updateExportReport("");
 
     try {
-      const zip = new window.JSZip();
-      await buildOutputs(async ({ blob, fileName }) => {
-        zip.file(fileName, blob);
-      });
-
-      elements.progress.textContent = "正在打包...";
-      const zipBlob = await zip.generateAsync({ type: "blob" });
-      downloadBlob(zipBlob, `watermark-kpr-${Date.now()}.zip`);
-      elements.progress.textContent = "完成";
-    } catch (error) {
-      console.error(error);
-      elements.progress.textContent = "失败，请查看控制台";
-    } finally {
-      elements.downloadBtn.disabled = false;
-      elements.previewBtn.disabled = false;
-      elements.downloadImagesBtn.disabled = false;
-    }
-  });
-
-  elements.downloadImagesBtn.addEventListener("click", async () => {
-    if (runtime.files.length === 0) return;
-    elements.downloadBtn.disabled = true;
-    elements.previewBtn.disabled = true;
-    elements.downloadImagesBtn.disabled = true;
-    elements.progress.textContent = "开始导出...";
-
-    try {
-      if ("showDirectoryPicker" in window) {
-        await saveImagesToFolder();
-        elements.progress.textContent = "已保存到文件夹";
+      const method = state.export.method || "zip";
+      if (method === "zip") {
+        const zip = new window.JSZip();
+        await buildOutputs(async ({ blob, fileName }) => {
+          zip.file(fileName, blob);
+        });
+        setProgress(100, "正在打包...");
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        downloadBlob(zipBlob, `watermark-kpr-${Date.now()}.zip`);
+        updateExportReport(`完成 ${runtime.files.length} 张图片，已打包 ZIP`);
+      } else if (method === "folder") {
+        if ("showDirectoryPicker" in window) {
+          await saveImagesToFolder();
+          updateExportReport(`完成 ${runtime.files.length} 张图片，已保存到文件夹`);
+        } else {
+          await downloadImagesIndividually();
+          updateExportReport(`完成 ${runtime.files.length} 张图片，已逐张下载`);
+        }
       } else {
         await downloadImagesIndividually();
-        elements.progress.textContent = "已开始下载";
+        updateExportReport(`完成 ${runtime.files.length} 张图片，已逐张下载`);
       }
+      setProgress(100, "完成");
     } catch (error) {
       if (error && error.name === "AbortError") {
-        elements.progress.textContent = "已取消";
+        setProgress(0, "已取消");
       } else {
         console.error(error);
-        elements.progress.textContent = "失败，请查看控制台";
+        setProgress(0, "失败，请查看控制台");
       }
     } finally {
       elements.downloadBtn.disabled = false;
       elements.previewBtn.disabled = false;
-      elements.downloadImagesBtn.disabled = false;
     }
   });
 
@@ -287,7 +480,7 @@ function setupEvents() {
       x: clamp((pos.x - runtime.dragOffset.x) / width, 0, 1),
       y: clamp((pos.y - runtime.dragOffset.y) / height, 0, 1),
     };
-    renderPreview();
+    scheduleRenderPreview();
   });
 
   elements.previewCanvas.addEventListener("pointerup", (event) => {
@@ -375,10 +568,27 @@ setupZoom();
 loadTemplate(() => {
   applyStateToInputs();
   updateExportSummary();
+  updateControlAvailability();
+  syncAdvancedVisibility();
 }, renderPreview);
+
+renderTemplateSelect();
+renderRecentTemplates();
+updateTemplateActions(elements.templateSelect.value);
+updateControlAvailability();
+
+if (!("showDirectoryPicker" in window)) {
+  const option = elements.exportMethod.querySelector('option[value="folder"]');
+  if (option) option.disabled = true;
+  if (elements.exportMethod.value === "folder") {
+    elements.exportMethod.value = "individual";
+    syncStateFromInputs();
+    updateExportSummary();
+  }
+}
 
 elements.previewBtn.disabled = true;
 elements.downloadBtn.disabled = true;
-elements.downloadImagesBtn.disabled = true;
+resetProgress();
 
 export { renderPreview, updateHint };

@@ -15,9 +15,9 @@
           <span class="brand brand-gradient">WaterMark KinPoeRay</span>
         </div>
         <div class="topbar-actions">
-          <button id="addTextBtn" class="ghost">Add Text</button>
-          <button id="addLogoBtn" class="ghost">Add Logo</button>
-          <button id="removeBtn" class="danger">Remove</button>
+          <button id="addTextBtn" class="ghost">文字水印</button>
+          <button id="addLogoBtn" class="ghost">Logo 水印</button>
+          <button id="removeBtn" class="danger">清除水印</button>
         </div>
       </header>
 
@@ -29,112 +29,156 @@
             <div id="fileSummary" class="muted">未选择图片</div>
           </div>
 
-          <div class="section section-collapsible" data-section="watermark">
-            <button class="section-title section-toggle" type="button">2. 水印设置</button>
+          <div class="section section-collapsible" data-section="templates">
+            <button class="section-title section-toggle" type="button">2. 模板</button>
             <div class="form-row">
-              <label for="processMode">Mode</label>
+              <label for="templateSelect">模板选择</label>
+              <select id="templateSelect"></select>
+              <button id="deleteTemplateBtn" class="ghost" type="button">删除</button>
+            </div>
+            <div class="form-row">
+              <label for="templateName">保存模板</label>
+              <input id="templateName" type="text" placeholder="例如：证件防泄漏" />
+              <button id="saveTemplateBtn" type="button">保存</button>
+            </div>
+            <div class="template-recent">
+              <div class="muted">最近使用</div>
+              <div id="recentTemplates" class="template-chips"></div>
+            </div>
+          </div>
+
+          <div class="section section-collapsible" data-section="watermark">
+            <button class="section-title section-toggle" type="button">3. 水印设置</button>
+            <div class="form-row">
+              <label for="processMode">处理模式</label>
               <select id="processMode">
-                <option value="add">Add Watermark</option>
-                <option value="remove-gemini">Remove Gemini Watermark</option>
+                <option value="add">添加水印</option>
+                <option value="remove-gemini">移除 Gemini 水印</option>
               </select>
             </div>
             <div class="form-row">
-              <label for="removeThenAdd">Remove → Add</label>
+              <label for="removeThenAdd">去除后再添加</label>
               <input id="removeThenAdd" type="checkbox" />
             </div>
             <div class="muted">仅移除可见 Gemini 水印，不影响 SynthID。</div>
 
-            <div class="form-row">
-              <label for="wmText">Text</label>
-              <input id="wmText" type="text" placeholder="Your watermark" />
-            </div>
-
-            <div class="form-row">
-              <label for="fontFamily">Font</label>
-              <select id="fontFamily">
-                <option value="Arial">Arial</option>
-                <option value="PingFang SC">PingFang SC</option>
-                <option value="Microsoft YaHei">Microsoft YaHei</option>
-                <option value="Noto Sans">Noto Sans</option>
-                <option value="Georgia">Georgia</option>
-              </select>
-            </div>
-
-            <div class="form-row">
-              <label for="fontSize">Size</label>
-              <input id="fontSize" type="range" min="12" max="180" step="1" value="48" />
-              <span id="fontSizeValue" class="value">48</span>
-            </div>
-
-            <div class="form-row">
-              <label for="wmColor">Color</label>
-              <input id="wmColor" type="color" value="#ffffff" />
-            </div>
-
-            <div class="form-row">
-              <label for="opacity">Opacity</label>
-              <input id="opacity" type="range" min="0" max="1" step="0.05" value="0.35" />
-              <span id="opacityValue" class="value">0.35</span>
-            </div>
-
-            <div class="form-row">
-              <label for="rotation">Rotation</label>
-              <input id="rotation" type="range" min="-90" max="90" step="1" value="-20" />
-              <span id="rotationValue" class="value">-20°</span>
-            </div>
-
-            <div class="form-row">
-              <label for="scale">Scale</label>
-              <input id="scale" type="range" min="0.2" max="3" step="0.05" value="1" />
-              <span id="scaleValue" class="value">1.00</span>
-            </div>
-
-            <div class="form-row">
-              <label for="mode">Mode</label>
-              <select id="mode">
-                <option value="single">Single</option>
-                <option value="tile">Tile</option>
-              </select>
-            </div>
-
-            <div class="form-row">
-              <label>Tile Style</label>
-              <div class="tile-style" id="tileStyle">
-                <button type="button" data-style="single" class="tile-btn is-active" aria-label="Single tile">
-                  <span class="dot-grid grid-1"></span>
-                </button>
-                <button type="button" data-style="grid-4" class="tile-btn" aria-label="2x2 tile">
-                  <span class="dot-grid grid-2"></span>
-                </button>
-                <button type="button" data-style="grid-9" class="tile-btn" aria-label="3x3 tile">
-                  <span class="dot-grid grid-3"></span>
-                </button>
+            <div id="watermarkControls" class="control-group">
+              <div class="form-row">
+                <label for="wmText">水印文字</label>
+                <input id="wmText" type="text" placeholder="Your watermark" />
               </div>
-              <span class="value muted">密度</span>
-            </div>
 
-            <div class="form-row">
-              <label for="tileGap">Tile Gap</label>
-              <input id="tileGap" type="range" min="0" max="600" step="5" value="180" />
-              <span id="tileGapValue" class="value">180</span>
-            </div>
+              <div class="form-row">
+                <label for="fontFamily">字体</label>
+                <select id="fontFamily">
+                  <option value="Arial">Arial</option>
+                  <option value="PingFang SC">PingFang SC</option>
+                  <option value="Microsoft YaHei">Microsoft YaHei</option>
+                  <option value="Noto Sans">Noto Sans</option>
+                  <option value="Georgia">Georgia</option>
+                </select>
+              </div>
 
-            <div class="form-row">
-              <label for="logoInput">Logo</label>
-              <input id="logoInput" type="file" accept="image/*" />
+              <div class="form-row">
+                <label for="fontSize">字号</label>
+                <input id="fontSize" type="range" min="12" max="180" step="1" value="48" />
+                <span id="fontSizeValue" class="value">48</span>
+              </div>
+
+              <div class="form-row">
+                <label for="wmColor">颜色</label>
+                <input id="wmColor" type="color" value="#ffffff" />
+              </div>
+
+              <div class="form-row">
+                <label for="opacity">透明度</label>
+                <input id="opacity" type="range" min="0" max="1" step="0.05" value="0.35" />
+                <span id="opacityValue" class="value">0.35</span>
+              </div>
+
+              <div class="form-row">
+                <label for="rotation">旋转</label>
+                <input id="rotation" type="range" min="-90" max="90" step="1" value="-20" />
+                <span id="rotationValue" class="value">-20°</span>
+              </div>
+
+              <div class="form-row">
+                <label for="scale">缩放</label>
+                <input id="scale" type="range" min="0.2" max="3" step="0.05" value="1" />
+                <span id="scaleValue" class="value">1.00</span>
+              </div>
+
+              <div class="form-row">
+                <label for="mode">水印模式</label>
+                <select id="mode">
+                  <option value="single">单个</option>
+                  <option value="tile">平铺</option>
+                </select>
+              </div>
+
+              <div class="advanced-toggle">
+                <button id="advancedToggle" type="button" class="ghost">高级设置</button>
+              </div>
+
+              <div id="advancedControls" class="advanced-controls">
+                <div class="form-row">
+                  <label>平铺密度</label>
+                  <div class="tile-style" id="tileStyle">
+                    <button type="button" data-style="single" class="tile-btn is-active" aria-label="Single tile">
+                      <span class="dot-grid grid-1"></span>
+                    </button>
+                    <button type="button" data-style="grid-4" class="tile-btn" aria-label="2x2 tile">
+                      <span class="dot-grid grid-2"></span>
+                    </button>
+                    <button type="button" data-style="grid-9" class="tile-btn" aria-label="3x3 tile">
+                      <span class="dot-grid grid-3"></span>
+                    </button>
+                  </div>
+                  <span class="value muted">密度</span>
+                </div>
+
+                <div class="form-row">
+                  <label for="tileGap">平铺间距</label>
+                  <input id="tileGap" type="range" min="0" max="600" step="5" value="180" />
+                  <span id="tileGapValue" class="value">180</span>
+                </div>
+
+                <div class="form-row">
+                  <label for="logoInput">Logo</label>
+                  <input id="logoInput" type="file" accept="image/*" />
+                </div>
+              </div>
             </div>
           </div>
 
           <div class="section section-collapsible" data-section="export">
-            <button class="section-title section-toggle" type="button">3. 导出</button>
+            <button class="section-title section-toggle" type="button">4. 导出</button>
             <div class="actions">
-              <button id="settingsBtn" class="ghost">Export Settings</button>
-              <button id="previewBtn" class="ghost">Render Preview</button>
-              <button id="downloadImagesBtn">Download Images</button>
-              <button id="downloadBtn">Download ZIP</button>
+              <button id="settingsBtn" class="ghost">导出设置</button>
+              <button id="previewBtn" class="ghost">渲染预览</button>
+              <button id="downloadBtn">开始导出</button>
+            </div>
+            <div class="form-row">
+              <label for="exportMethod">导出方式</label>
+              <select id="exportMethod">
+                <option value="folder">保存到文件夹（推荐）</option>
+                <option value="individual">逐张下载</option>
+                <option value="zip">打包 ZIP</option>
+              </select>
             </div>
             <div id="exportSummary" class="muted"></div>
-            <div id="progress" class="muted"></div>
+            <div class="progress-wrap">
+              <div class="progress-bar">
+                <div id="progressFill" class="progress-bar-fill"></div>
+              </div>
+              <div class="progress-meta">
+                <img id="exportThumb" alt="export preview" />
+                <div>
+                  <div id="progress" class="muted"></div>
+                  <div id="exportReport" class="muted"></div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -158,9 +202,9 @@
     </div>
 
     <div class="bottom-actions">
-      <button id="addTextBtnMobile" class="ghost">Add Text</button>
-      <button id="addLogoBtnMobile" class="ghost">Add Logo</button>
-      <button id="removeBtnMobile" class="danger">Remove</button>
+      <button id="addTextBtnMobile" class="ghost">文字水印</button>
+      <button id="addLogoBtnMobile" class="ghost">Logo 水印</button>
+      <button id="removeBtnMobile" class="danger">清除水印</button>
     </div>
 
     <button id="helpBtn" class="help-btn">?</button>
@@ -174,12 +218,11 @@
         <div class="modal-body help-body">
           <ol>
             <li>上传图片后会显示预览。</li>
-            <li>选择模式：添加水印 / 去除 Gemini 水印。</li>
+            <li>选择处理模式：添加水印 / 去除 Gemini 水印。</li>
             <li>需要去除后再添加时，勾选「Remove → Add」。</li>
-            <li>文本或 Logo 水印可拖拽调整位置（Single 模式）。</li>
-            <li>点击「Export Settings」配置格式、尺寸与命名。</li>
-            <li>点击「Download Images」直接导出图片。</li>
-            <li>点击「Download ZIP」批量导出为压缩包。</li>
+            <li>文本或 Logo 水印可拖拽调整位置（单个水印模式）。</li>
+            <li>点击「导出设置」配置格式、尺寸与命名。</li>
+            <li>选择导出方式后点击「开始导出」。</li>
           </ol>
           <div class="muted">提示：Chrome/Edge 可选择保存文件夹，其他浏览器会触发多次下载。</div>
           <div class="muted">提示：去除仅对 Gemini 可见水印有效，不影响 SynthID。</div>

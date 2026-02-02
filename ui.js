@@ -5,11 +5,13 @@ export const elements = {
   logoInput: document.getElementById("logoInput"),
   fileSummary: document.getElementById("fileSummary"),
   previewBtn: document.getElementById("previewBtn"),
-  downloadImagesBtn: document.getElementById("downloadImagesBtn"),
   downloadBtn: document.getElementById("downloadBtn"),
   previewCanvas: document.getElementById("previewCanvas"),
   previewViewport: document.getElementById("previewViewport"),
   progress: document.getElementById("progress"),
+  progressFill: document.getElementById("progressFill"),
+  exportReport: document.getElementById("exportReport"),
+  exportThumb: document.getElementById("exportThumb"),
   hint: document.getElementById("hint"),
   settingsBtn: document.getElementById("settingsBtn"),
   settingsModal: document.getElementById("settingsModal"),
@@ -19,6 +21,14 @@ export const elements = {
   helpBtn: document.getElementById("helpBtn"),
   helpModal: document.getElementById("helpModal"),
   closeHelp: document.getElementById("closeHelp"),
+  templateSelect: document.getElementById("templateSelect"),
+  templateNameInput: document.getElementById("templateName"),
+  saveTemplateBtn: document.getElementById("saveTemplateBtn"),
+  deleteTemplateBtn: document.getElementById("deleteTemplateBtn"),
+  recentTemplates: document.getElementById("recentTemplates"),
+  watermarkControls: document.getElementById("watermarkControls"),
+  advancedToggle: document.getElementById("advancedToggle"),
+  advancedControls: document.getElementById("advancedControls"),
   addTextBtn: document.getElementById("addTextBtn"),
   addLogoBtn: document.getElementById("addLogoBtn"),
   removeBtn: document.getElementById("removeBtn"),
@@ -52,6 +62,7 @@ export const elements = {
   wmColor: document.getElementById("wmColor"),
   modeSelect: document.getElementById("mode"),
   formatSelect: document.getElementById("format"),
+  exportMethod: document.getElementById("exportMethod"),
 };
 
 export function updateRangeDisplays() {
@@ -85,6 +96,7 @@ export function applyStateToInputs() {
   elements.renameSuffixInput.value = state.export.renameSuffix;
   elements.sequenceStartInput.value = state.export.sequenceStart;
   elements.randomizePositionInput.checked = state.export.randomizePosition;
+  elements.exportMethod.value = state.export.method || "folder";
   updateRangeDisplays();
   updateExportSummary();
 }
@@ -110,19 +122,26 @@ export function syncStateFromInputs() {
   state.export.renameSuffix = elements.renameSuffixInput.value.trim();
   state.export.sequenceStart = Number(elements.sequenceStartInput.value) || 1;
   state.export.randomizePosition = elements.randomizePositionInput.checked;
+  state.export.method = elements.exportMethod.value;
 }
 
 export function updateExportSummary() {
-  const formatLabel = state.export.format === "auto" ? "Original" : state.export.format.toUpperCase();
-  let resizeLabel = "No resize";
-  if (state.export.resizeMode === "width") resizeLabel = `Width ${state.export.resizeValue}px`;
-  if (state.export.resizeMode === "height") resizeLabel = `Height ${state.export.resizeValue}px`;
-  if (state.export.resizeMode === "max") resizeLabel = `Max ${state.export.resizeValue}px`;
-  let renameLabel = "Keep original";
-  if (state.export.renameMode === "prefix") renameLabel = `Prefix ${state.export.renamePrefix || "wm_"}`;
-  if (state.export.renameMode === "suffix") renameLabel = `Suffix ${state.export.renameSuffix || "_watermarked"}`;
-  if (state.export.renameMode === "sequence") renameLabel = `Sequence from ${state.export.sequenceStart || 1}`;
-  elements.exportSummary.textContent = `${formatLabel} · ${resizeLabel} · ${renameLabel}`;
+  const formatLabel = state.export.format === "auto" ? "原图格式" : state.export.format.toUpperCase();
+  let resizeLabel = "不缩放";
+  if (state.export.resizeMode === "width") resizeLabel = `宽度 ${state.export.resizeValue}px`;
+  if (state.export.resizeMode === "height") resizeLabel = `高度 ${state.export.resizeValue}px`;
+  if (state.export.resizeMode === "max") resizeLabel = `最长边 ${state.export.resizeValue}px`;
+  let renameLabel = "保留原名";
+  if (state.export.renameMode === "prefix") renameLabel = `前缀 ${state.export.renamePrefix || "wm_"}`;
+  if (state.export.renameMode === "suffix") renameLabel = `后缀 ${state.export.renameSuffix || "_watermarked"}`;
+  if (state.export.renameMode === "sequence") renameLabel = `序列起始 ${state.export.sequenceStart || 1}`;
+  const methodMap = {
+    folder: "保存到文件夹",
+    individual: "逐张下载",
+    zip: "ZIP",
+  };
+  const methodLabel = methodMap[state.export.method] || "ZIP";
+  elements.exportSummary.textContent = `${formatLabel} · ${resizeLabel} · ${renameLabel} · ${methodLabel}`;
 }
 
 export function setActiveTileStyle(style) {
@@ -137,6 +156,20 @@ export function bindLayerButton(button, type, onChange) {
   button.addEventListener("click", () => {
     state.type = type;
     onChange();
+  });
+}
+
+export function setLayerButtonsEnabled(enabled) {
+  [
+    elements.addTextBtn,
+    elements.addLogoBtn,
+    elements.removeBtn,
+    elements.addTextBtnMobile,
+    elements.addLogoBtnMobile,
+    elements.removeBtnMobile,
+  ].forEach((btn) => {
+    if (!btn) return;
+    btn.disabled = !enabled;
   });
 }
 
@@ -158,6 +191,14 @@ export function syncLayerButtons() {
   });
 }
 
+export function setWatermarkControlsEnabled(enabled) {
+  if (!elements.watermarkControls) return;
+  elements.watermarkControls.classList.toggle("is-disabled", !enabled);
+  elements.watermarkControls.querySelectorAll("input, select, button").forEach((el) => {
+    el.disabled = !enabled;
+  });
+}
+
 export function applyMobileCollapse() {
   const isMobile = window.matchMedia("(max-width: 640px)").matches;
   document.querySelectorAll(".section-collapsible").forEach((section) => {
@@ -166,7 +207,7 @@ export function applyMobileCollapse() {
       return;
     }
     const key = section.dataset.section;
-    section.classList.toggle("collapsed", key !== "upload");
+    section.classList.toggle("collapsed", !["upload", "watermark"].includes(key));
   });
 }
 

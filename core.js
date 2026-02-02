@@ -16,6 +16,7 @@ export const state = {
   tileStyle: "single",
   tileGap: 180,
   position: { x: 0.5, y: 0.5 },
+  logoDataUrl: null,
   export: {
     format: "auto",
     quality: 0.92,
@@ -26,6 +27,7 @@ export const state = {
     renameSuffix: "_watermarked",
     sequenceStart: 1,
     randomizePosition: false,
+    method: "folder",
   },
 };
 
@@ -39,6 +41,8 @@ export const runtime = {
   geminiAlpha48: null,
   geminiAlpha96: null,
   geminiAlphaPromise: null,
+  imageCache: new Map(),
+  renderToken: 0,
 };
 
 export function clamp(value, min, max) {
@@ -61,6 +65,32 @@ export function loadImage(file) {
   });
 }
 
+export function loadImageCached(file) {
+  if (runtime.imageCache.has(file)) {
+    return Promise.resolve(runtime.imageCache.get(file).image);
+  }
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      runtime.imageCache.set(file, { image, url });
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Failed to load image"));
+    };
+    image.src = url;
+  });
+}
+
+export function resetImageCache() {
+  runtime.imageCache.forEach((entry) => {
+    if (entry && entry.url) URL.revokeObjectURL(entry.url);
+  });
+  runtime.imageCache.clear();
+}
+
 export function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -81,7 +111,7 @@ export function loadLogoFromDataUrl(dataUrl, onLoad) {
 }
 
 export async function renderImageWithWatermark(file, settings, showGuide = false) {
-  const image = await loadImage(file);
+  const image = await loadImageCached(file);
   const baseCanvas = document.createElement("canvas");
   baseCanvas.width = image.width;
   baseCanvas.height = image.height;
