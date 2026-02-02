@@ -63,6 +63,49 @@ async function renderPreview() {
   saveTemplate();
 }
 
+function formatProgress(index, total, name) {
+  const percent = Math.round((index / total) * 100);
+  const safeName = name ? ` · ${name}` : "";
+  return `处理中 ${index}/${total} (${percent}%)${safeName}`;
+}
+
+async function buildOutputs(onEach) {
+  const originalPosition = { ...state.position };
+  let index = 0;
+  for (const file of runtime.files) {
+    index += 1;
+    elements.progress.textContent = formatProgress(index, runtime.files.length, file.name);
+    if (state.export.randomizePosition && state.mode === "single") {
+      state.position = getRandomPosition(file.name);
+    }
+    const canvas = await renderImageWithWatermark(file, getSettings());
+    const { type, quality, ext } = resolveOutputFormat(file);
+    const blob = await canvasToBlob(canvas, type, quality);
+    const fileName = getOutputName(file, index - 1, ext);
+    await onEach({ blob, fileName, index });
+  }
+  state.position = originalPosition;
+}
+
+async function saveImagesToFolder() {
+  const dirHandle = await window.showDirectoryPicker();
+  await buildOutputs(async ({ blob, fileName }) => {
+    const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+  });
+}
+
+async function downloadImagesIndividually() {
+  await buildOutputs(async ({ blob, fileName, index }) => {
+    downloadBlob(blob, fileName);
+    if (index < runtime.files.length) {
+      await new Promise((resolve) => setTimeout(resolve, 120));
+    }
+  });
+}
+
 function setupEvents() {
   [
     elements.opacityInput,
@@ -154,6 +197,7 @@ function setupEvents() {
       elements.fileSummary.textContent = "未选择图片";
       elements.downloadBtn.disabled = true;
       elements.previewBtn.disabled = true;
+      elements.downloadImagesBtn.disabled = true;
       return;
     }
 
@@ -162,6 +206,7 @@ function setupEvents() {
     elements.fileSummary.textContent = `${runtime.files.length} 张图片 (${sizeMb} MB)`;
     elements.downloadBtn.disabled = false;
     elements.previewBtn.disabled = false;
+    elements.downloadImagesBtn.disabled = false;
     renderPreview();
   });
 
@@ -171,25 +216,14 @@ function setupEvents() {
     if (runtime.files.length === 0) return;
     elements.downloadBtn.disabled = true;
     elements.previewBtn.disabled = true;
-    elements.progress.textContent = "渲染中...";
+    elements.downloadImagesBtn.disabled = true;
+    elements.progress.textContent = "开始渲染...";
 
     try {
       const zip = new window.JSZip();
-      const originalPosition = { ...state.position };
-      let index = 0;
-      for (const file of runtime.files) {
-        index += 1;
-        elements.progress.textContent = `处理中 ${index}/${runtime.files.length}`;
-        if (state.export.randomizePosition && state.mode === "single") {
-          state.position = getRandomPosition(file.name);
-        }
-        const canvas = await renderImageWithWatermark(file, getSettings());
-        const { type, quality, ext } = resolveOutputFormat(file);
-        const blob = await canvasToBlob(canvas, type, quality);
-        const fileName = getOutputName(file, index - 1, ext);
+      await buildOutputs(async ({ blob, fileName }) => {
         zip.file(fileName, blob);
-      }
-      state.position = originalPosition;
+      });
 
       elements.progress.textContent = "正在打包...";
       const zipBlob = await zip.generateAsync({ type: "blob" });
@@ -201,6 +235,36 @@ function setupEvents() {
     } finally {
       elements.downloadBtn.disabled = false;
       elements.previewBtn.disabled = false;
+      elements.downloadImagesBtn.disabled = false;
+    }
+  });
+
+  elements.downloadImagesBtn.addEventListener("click", async () => {
+    if (runtime.files.length === 0) return;
+    elements.downloadBtn.disabled = true;
+    elements.previewBtn.disabled = true;
+    elements.downloadImagesBtn.disabled = true;
+    elements.progress.textContent = "开始导出...";
+
+    try {
+      if ("showDirectoryPicker" in window) {
+        await saveImagesToFolder();
+        elements.progress.textContent = "已保存到文件夹";
+      } else {
+        await downloadImagesIndividually();
+        elements.progress.textContent = "已开始下载";
+      }
+    } catch (error) {
+      if (error && error.name === "AbortError") {
+        elements.progress.textContent = "已取消";
+      } else {
+        console.error(error);
+        elements.progress.textContent = "失败，请查看控制台";
+      }
+    } finally {
+      elements.downloadBtn.disabled = false;
+      elements.previewBtn.disabled = false;
+      elements.downloadImagesBtn.disabled = false;
     }
   });
 
@@ -315,5 +379,6 @@ loadTemplate(() => {
 
 elements.previewBtn.disabled = true;
 elements.downloadBtn.disabled = true;
+elements.downloadImagesBtn.disabled = true;
 
 export { renderPreview, updateHint };

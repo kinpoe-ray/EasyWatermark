@@ -5,6 +5,7 @@ export const elements = {
   logoInput: document.getElementById("logoInput"),
   fileSummary: document.getElementById("fileSummary"),
   previewBtn: document.getElementById("previewBtn"),
+  downloadImagesBtn: document.getElementById("downloadImagesBtn"),
   downloadBtn: document.getElementById("downloadBtn"),
   previewCanvas: document.getElementById("previewCanvas"),
   previewViewport: document.getElementById("previewViewport"),
