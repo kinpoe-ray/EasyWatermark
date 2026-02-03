@@ -76,8 +76,12 @@ function updatePreviewNav() {
   const current = total ? runtime.activeImageIndex + 1 : 0;
   elements.previewIndex.textContent = `${current} / ${total}`;
   const canNavigate = total > 1;
-  if (elements.prevImageBtn) elements.prevImageBtn.disabled = !canNavigate || runtime.activeImageIndex === 0;
-  if (elements.nextImageBtn) elements.nextImageBtn.disabled = !canNavigate || runtime.activeImageIndex === total - 1;
+  const prevDisabled = !canNavigate || runtime.activeImageIndex === 0;
+  const nextDisabled = !canNavigate || runtime.activeImageIndex === total - 1;
+  if (elements.prevImageBtn) elements.prevImageBtn.disabled = prevDisabled;
+  if (elements.nextImageBtn) elements.nextImageBtn.disabled = nextDisabled;
+  if (elements.prevImageBtnOverlay) elements.prevImageBtnOverlay.disabled = prevDisabled;
+  if (elements.nextImageBtnOverlay) elements.nextImageBtnOverlay.disabled = nextDisabled;
 }
 
 function goToImage(index) {
@@ -531,6 +535,12 @@ function setupEvents() {
   }
   if (elements.nextImageBtn) {
     elements.nextImageBtn.addEventListener("click", goNextImage);
+  }
+  if (elements.prevImageBtnOverlay) {
+    elements.prevImageBtnOverlay.addEventListener("click", goPrevImage);
+  }
+  if (elements.nextImageBtnOverlay) {
+    elements.nextImageBtnOverlay.addEventListener("click", goNextImage);
   }
 
   document.addEventListener("keydown", (event) => {

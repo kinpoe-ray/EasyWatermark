@@ -13,6 +13,8 @@ export const elements = {
   previewIndex: document.getElementById("previewIndex"),
   prevImageBtn: document.getElementById("prevImageBtn"),
   nextImageBtn: document.getElementById("nextImageBtn"),
+  prevImageBtnOverlay: document.getElementById("prevImageBtnOverlay"),
+  nextImageBtnOverlay: document.getElementById("nextImageBtnOverlay"),
   zoomOutBtn: document.getElementById("zoomOutBtn"),
   zoomResetBtn: document.getElementById("zoomResetBtn"),
   zoomInBtn: document.getElementById("zoomInBtn"),

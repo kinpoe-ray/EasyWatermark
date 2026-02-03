@@ -422,6 +422,37 @@ button:disabled {
   overflow: hidden;
 }
 
+.preview-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(16, 17, 20, 0.72);
+  color: var(--text);
+  font-weight: 700;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  backdrop-filter: blur(8px);
+}
+
+.preview-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+#prevImageBtnOverlay {
+  left: 10px;
+}
+
+#nextImageBtnOverlay {
+  right: 10px;
+}
+
 .preview-viewport {
   display: flex;
   align-items: center;
@@ -625,6 +656,15 @@ canvas {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 8px;
+  }
+
+  #prevImageBtn,
+  #nextImageBtn {
+    display: none;
+  }
+
+  .preview-nav-btn {
+    display: inline-flex;
   }
 
   .preview-actions {
