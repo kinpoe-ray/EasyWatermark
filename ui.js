@@ -11,6 +11,7 @@ export const elements = {
   previewCanvas: document.getElementById("previewCanvas"),
   previewViewport: document.getElementById("previewViewport"),
   previewIndex: document.getElementById("previewIndex"),
+  dragHint: document.getElementById("dragHint"),
   prevImageBtn: document.getElementById("prevImageBtn"),
   nextImageBtn: document.getElementById("nextImageBtn"),
   prevImageBtnOverlay: document.getElementById("prevImageBtnOverlay"),

@@ -52,6 +52,7 @@ let renderQueued = false;
 let swipeStartX = 0;
 let swipeStartY = 0;
 let swipeStartTime = 0;
+const DRAG_HINT_KEY = "easy-watermark-drag-hint-dismissed";
 
 function setPrimaryButtonsEnabled(enabled) {
   elements.previewBtn.disabled = !enabled;
@@ -125,14 +126,59 @@ function syncAdvancedVisibility() {
 function syncHint() {
   if (state.processMode === "remove-gemini" && !state.removeThenAdd) {
     updateHint("Gemini 可见水印移除（不影响 SynthID）");
+    updateDragHintVisibility();
     return;
   }
   if (state.mode === "tile") {
     updateHint("平铺模式无法拖动");
+    updateDragHintVisibility();
     return;
   }
   const isMobile = window.matchMedia("(max-width: 640px)").matches;
   updateHint(isMobile ? "拖动水印调整位置 · 双指缩放预览" : "拖动水印调整位置");
+  updateDragHintVisibility();
+}
+
+function isMobileViewport() {
+  return window.matchMedia("(max-width: 640px)").matches;
+}
+
+function updateDragHintVisibility() {
+  if (!elements.dragHint) return;
+  const dismissed = localStorage.getItem(DRAG_HINT_KEY) === "1";
+  const removeOnly = state.processMode === "remove-gemini" && !state.removeThenAdd;
+  const shouldShow = isMobileViewport() && !dismissed && !removeOnly && state.mode === "single" && !!state.type && runtime.files.length > 0;
+  elements.dragHint.classList.toggle("is-hidden", !shouldShow);
+}
+
+function dismissDragHint() {
+  if (!elements.dragHint) return;
+  localStorage.setItem(DRAG_HINT_KEY, "1");
+  elements.dragHint.classList.add("is-hidden");
+}
+
+function setSectionCollapsed(sectionKey, collapsed) {
+  const section = document.querySelector(`.section-collapsible[data-section="${sectionKey}"]`);
+  if (!section) return;
+  section.classList.toggle("collapsed", collapsed);
+}
+
+function syncMobileSections() {
+  if (!isMobileViewport()) return;
+  const hasTemplates = getRecentTemplateIds().length > 0 || getSavedTemplates().length > 0;
+  if (hasTemplates) {
+    setSectionCollapsed("templates", false);
+  }
+  if (runtime.files.length > 0) {
+    setSectionCollapsed("export", false);
+  }
+}
+
+function scrollPreviewIntoView() {
+  if (!isMobileViewport()) return;
+  const preview = document.querySelector(".preview");
+  if (!preview) return;
+  preview.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 async function renderPreview() {
@@ -151,6 +197,7 @@ async function renderPreview() {
   applyZoom();
   syncLayerButtons();
   syncHint();
+  updateDragHintVisibility();
   saveTemplate();
   updatePreviewNav();
 }
@@ -297,6 +344,7 @@ function applyTemplateById(id) {
   }
   touchRecentTemplate(id);
   renderRecentTemplates();
+  syncMobileSections();
 }
 
 function updateTemplateActions(id) {
@@ -417,6 +465,7 @@ function setupEvents() {
     renderTemplateSelect(template.id);
     updateTemplateActions(template.id);
     renderRecentTemplates();
+    syncMobileSections();
   });
 
   elements.deleteTemplateBtn.addEventListener("click", () => {
@@ -426,6 +475,7 @@ function setupEvents() {
     renderTemplateSelect(BUILTIN_TEMPLATES[0].id);
     updateTemplateActions(BUILTIN_TEMPLATES[0].id);
     renderRecentTemplates();
+    syncMobileSections();
   });
 
   elements.tileStyleEl.addEventListener("click", (event) => {
@@ -460,6 +510,7 @@ function setupEvents() {
     if (runtime.files.length === 0) {
       elements.fileSummary.textContent = "未选择图片";
       setPrimaryButtonsEnabled(false);
+      updateDragHintVisibility();
       return;
     }
 
@@ -468,6 +519,10 @@ function setupEvents() {
     elements.fileSummary.textContent = `${runtime.files.length} 张图片 (${sizeMb} MB)`;
     setPrimaryButtonsEnabled(true);
     scheduleRenderPreview();
+    if (isMobileViewport()) {
+      setSectionCollapsed("export", false);
+      requestAnimationFrame(scrollPreviewIntoView);
+    }
   });
 
   elements.previewBtn.addEventListener("click", renderPreview);
@@ -579,6 +634,7 @@ function setupEvents() {
     const hit = hitTest(event);
     if (!hit) return;
     runtime.isDragging = true;
+    dismissDragHint();
     runtime.dragOffset = hit.offset;
     elements.previewCanvas.setPointerCapture(event.pointerId);
   });
@@ -600,6 +656,12 @@ function setupEvents() {
     runtime.isDragging = false;
     elements.previewCanvas.releasePointerCapture(event.pointerId);
     saveTemplate();
+  });
+
+  elements.previewCanvas.addEventListener("pointercancel", (event) => {
+    if (!runtime.isDragging) return;
+    runtime.isDragging = false;
+    elements.previewCanvas.releasePointerCapture(event.pointerId);
   });
 }
 
@@ -681,7 +743,13 @@ syncLayerButtons();
 setupEvents();
 setupSectionToggles();
 applyMobileCollapse();
-window.addEventListener("resize", applyMobileCollapse);
+syncMobileSections();
+updateDragHintVisibility();
+window.addEventListener("resize", () => {
+  applyMobileCollapse();
+  syncMobileSections();
+  updateDragHintVisibility();
+});
 setupZoom();
 loadTemplate(() => {
   applyStateToInputs();

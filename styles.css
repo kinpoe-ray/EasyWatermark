@@ -8,6 +8,7 @@
   --accent-2: #ffb74a;
   --border: #2a2f3a;
   --danger: #ff6b6b;
+  color-scheme: dark;
 }
 
 * {
@@ -19,6 +20,11 @@ select,
 textarea,
 button {
   font-family: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 input[type="range"],
@@ -40,6 +46,7 @@ body {
   color: var(--text);
   font-family: "Space Grotesk", "Segoe UI", sans-serif;
   min-height: 100vh;
+  -webkit-text-size-adjust: 100%;
 }
 
 .app {
@@ -60,6 +67,7 @@ body {
   top: 0;
   z-index: 10;
   backdrop-filter: blur(12px);
+  padding-top: calc(16px + env(safe-area-inset-top));
 }
 
 .topbar-left {
@@ -422,6 +430,28 @@ button:disabled {
   overflow: hidden;
 }
 
+.drag-hint {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  background: rgba(16, 17, 20, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text);
+  font-size: 12px;
+  text-align: center;
+  backdrop-filter: blur(8px);
+  opacity: 1;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.drag-hint.is-hidden {
+  opacity: 0;
+}
+
 .preview-nav-btn {
   position: absolute;
   top: 50%;
@@ -465,6 +495,7 @@ canvas {
   max-width: 100%;
   height: auto;
   border-radius: 8px;
+  touch-action: none;
 }
 
 .muted {
@@ -589,6 +620,13 @@ canvas {
     background-attachment: scroll;
   }
 
+  input,
+  select,
+  textarea,
+  button {
+    font-size: 16px;
+  }
+
   .layout {
     grid-template-areas:
       "preview"
@@ -654,7 +692,7 @@ canvas {
   .preview-tools {
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 8px;
   }
 
@@ -680,12 +718,16 @@ canvas {
   }
 
   .icon-btn {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
   }
 
   .preview-tools .icon-btn {
     width: 100%;
+  }
+
+  #previewIndex {
+    grid-column: 1 / -1;
   }
 
   #zoomResetBtn {
@@ -704,9 +746,21 @@ canvas {
     padding: 8px;
   }
 
+  .section-toggle {
+    min-height: 44px;
+    padding: 8px 0;
+  }
+
   .modal-card {
     max-height: 85vh;
     overflow: auto;
+  }
+
+  .modal-actions {
+    position: sticky;
+    bottom: 0;
+    padding: 10px 0 2px;
+    background: linear-gradient(180deg, rgba(26, 29, 36, 0), rgba(26, 29, 36, 0.85) 35%, #1a1d24 80%);
   }
 
   .topbar-actions {
@@ -722,6 +776,7 @@ canvas {
     gap: 8px;
     justify-content: center;
     padding: 10px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
     background: rgba(16, 17, 20, 0.9);
     border: 1px solid var(--border);
     border-radius: 14px;
@@ -733,6 +788,10 @@ canvas {
     flex: 1;
   }
 
+  .help-btn {
+    bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+
   .section-toggle::after {
     content: "▾";
     float: right;
@@ -741,5 +800,12 @@ canvas {
 
   .section-collapsible.collapsed .section-toggle::after {
     content: "▸";
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
   }
 }

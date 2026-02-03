@@ -2,7 +2,7 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>watermark-kpr</title>
     <link rel="stylesheet" href="styles.css" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
@@ -203,11 +203,11 @@
             <div class="preview-viewport" id="previewViewport">
               <canvas id="previewCanvas"></canvas>
             </div>
+            <div id="dragHint" class="drag-hint">拖动水印调整位置 · 双指缩放预览</div>
             <button id="nextImageBtnOverlay" class="preview-nav-btn" type="button" aria-label="下一张">→</button>
           </div>
           <div class="preview-actions mobile-only">
             <button id="settingsBtnMobile" class="ghost" type="button">导出设置</button>
-            <button id="previewBtnMobile" class="ghost" type="button">渲染预览</button>
             <button id="downloadBtnMobile" type="button">开始导出</button>
           </div>
         </section>
