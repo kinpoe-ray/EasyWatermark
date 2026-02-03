@@ -24,6 +24,7 @@ export const elements = {
   closeSettings: document.getElementById("closeSettings"),
   closeSettings2: document.getElementById("closeSettings2"),
   exportSummary: document.getElementById("exportSummary"),
+  exportMethodTip: document.getElementById("exportMethodTip"),
   helpBtn: document.getElementById("helpBtn"),
   helpModal: document.getElementById("helpModal"),
   closeHelp: document.getElementById("closeHelp"),
@@ -148,6 +149,21 @@ export function updateExportSummary() {
   };
   const methodLabel = methodMap[state.export.method] || "ZIP";
   elements.exportSummary.textContent = `${formatLabel} · ${resizeLabel} · ${renameLabel} · ${methodLabel}`;
+  updateExportMethodTip();
+}
+
+export function updateExportMethodTip() {
+  if (!elements.exportMethodTip) return;
+  const method = state.export.method;
+  if (method === "folder") {
+    elements.exportMethodTip.textContent = "保存到文件夹：仅桌面 Chrome/Edge 支持；iOS Safari 会自动改为「逐张下载」。";
+    return;
+  }
+  if (method === "individual") {
+    elements.exportMethodTip.textContent = "逐张下载：会触发多次下载提示，适合少量图片。";
+    return;
+  }
+  elements.exportMethodTip.textContent = "ZIP 打包：只下载一个文件，适合移动端与批量导出。";
 }
 
 export function setActiveTileStyle(style) {

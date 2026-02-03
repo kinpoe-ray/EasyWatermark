@@ -435,6 +435,12 @@ canvas {
   font-size: 12px;
 }
 
+.export-tip {
+  margin-top: -6px;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
 .footer {
   text-align: center;
   color: var(--muted);

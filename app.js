@@ -620,7 +620,7 @@ if (!("showDirectoryPicker" in window)) {
   const option = elements.exportMethod.querySelector('option[value="folder"]');
   if (option) option.disabled = true;
   if (elements.exportMethod.value === "folder") {
-    elements.exportMethod.value = "individual";
+    elements.exportMethod.value = "zip";
     syncStateFromInputs();
     updateExportSummary();
   }
