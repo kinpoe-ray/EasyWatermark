@@ -184,13 +184,25 @@
 
         <section class="preview">
           <div class="preview-header">
-            <span>Preview</span>
-            <span class="muted" id="hint">拖动水印调整位置</span>
+            <div class="preview-title">
+              <span>Preview</span>
+              <span class="muted" id="hint">拖动水印调整位置</span>
+            </div>
+            <div class="preview-tools">
+              <button id="zoomOutBtn" class="icon-btn" type="button" aria-label="缩小">-</button>
+              <button id="zoomResetBtn" class="icon-btn" type="button" aria-label="重置缩放">100%</button>
+              <button id="zoomInBtn" class="icon-btn" type="button" aria-label="放大">+</button>
+            </div>
           </div>
           <div class="canvas-wrap" id="previewWrap">
             <div class="preview-viewport" id="previewViewport">
               <canvas id="previewCanvas"></canvas>
             </div>
+          </div>
+          <div class="preview-actions mobile-only">
+            <button id="settingsBtnMobile" class="ghost" type="button">导出设置</button>
+            <button id="previewBtnMobile" class="ghost" type="button">渲染预览</button>
+            <button id="downloadBtnMobile" type="button">开始导出</button>
           </div>
         </section>
       </main>

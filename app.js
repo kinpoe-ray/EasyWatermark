@@ -50,6 +50,23 @@ function updateHint(message) {
 
 let renderQueued = false;
 
+function setPrimaryButtonsEnabled(enabled) {
+  elements.previewBtn.disabled = !enabled;
+  elements.downloadBtn.disabled = !enabled;
+  if (elements.previewBtnMobile) elements.previewBtnMobile.disabled = !enabled;
+  if (elements.downloadBtnMobile) elements.downloadBtnMobile.disabled = !enabled;
+}
+
+function adjustZoom(delta) {
+  runtime.zoom.scale = clamp(runtime.zoom.scale + delta, 0.6, 3);
+  applyZoom();
+}
+
+function resetZoom() {
+  runtime.zoom.scale = 1;
+  applyZoom();
+}
+
 function scheduleRenderPreview() {
   if (renderQueued) return;
   renderQueued = true;
@@ -80,7 +97,8 @@ function syncHint() {
     updateHint("平铺模式无法拖动");
     return;
   }
-  updateHint("拖动水印调整位置");
+  const isMobile = window.matchMedia("(max-width: 640px)").matches;
+  updateHint(isMobile ? "拖动水印调整位置 · 双指缩放预览" : "拖动水印调整位置");
 }
 
 async function renderPreview() {
@@ -325,6 +343,9 @@ function setupEvents() {
   });
 
   elements.settingsBtn.addEventListener("click", () => elements.settingsModal.classList.add("show"));
+  if (elements.settingsBtnMobile) {
+    elements.settingsBtnMobile.addEventListener("click", () => elements.settingsModal.classList.add("show"));
+  }
   elements.closeSettings.addEventListener("click", () => elements.settingsModal.classList.remove("show"));
   elements.closeSettings2.addEventListener("click", () => elements.settingsModal.classList.remove("show"));
   elements.settingsModal.addEventListener("click", (event) => {
@@ -402,25 +423,25 @@ function setupEvents() {
     runtime.activeImageIndex = 0;
     if (runtime.files.length === 0) {
       elements.fileSummary.textContent = "未选择图片";
-      elements.downloadBtn.disabled = true;
-      elements.previewBtn.disabled = true;
+      setPrimaryButtonsEnabled(false);
       return;
     }
 
     const totalSize = runtime.files.reduce((sum, file) => sum + file.size, 0);
     const sizeMb = (totalSize / (1024 * 1024)).toFixed(2);
     elements.fileSummary.textContent = `${runtime.files.length} 张图片 (${sizeMb} MB)`;
-    elements.downloadBtn.disabled = false;
-    elements.previewBtn.disabled = false;
+    setPrimaryButtonsEnabled(true);
     scheduleRenderPreview();
   });
 
   elements.previewBtn.addEventListener("click", renderPreview);
+  if (elements.previewBtnMobile) {
+    elements.previewBtnMobile.addEventListener("click", renderPreview);
+  }
 
   elements.downloadBtn.addEventListener("click", async () => {
     if (runtime.files.length === 0) return;
-    elements.downloadBtn.disabled = true;
-    elements.previewBtn.disabled = true;
+    setPrimaryButtonsEnabled(false);
     setProgress(0, "开始渲染...");
     updateExportReport("");
 
@@ -456,10 +477,22 @@ function setupEvents() {
         setProgress(0, "失败，请查看控制台");
       }
     } finally {
-      elements.downloadBtn.disabled = false;
-      elements.previewBtn.disabled = false;
+      setPrimaryButtonsEnabled(true);
     }
   });
+  if (elements.downloadBtnMobile) {
+    elements.downloadBtnMobile.addEventListener("click", () => elements.downloadBtn.click());
+  }
+
+  if (elements.zoomOutBtn) {
+    elements.zoomOutBtn.addEventListener("click", () => adjustZoom(-0.2));
+  }
+  if (elements.zoomInBtn) {
+    elements.zoomInBtn.addEventListener("click", () => adjustZoom(0.2));
+  }
+  if (elements.zoomResetBtn) {
+    elements.zoomResetBtn.addEventListener("click", resetZoom);
+  }
 
   elements.previewCanvas.addEventListener("pointerdown", (event) => {
     if (!runtime.files.length || state.mode === "tile" || !state.type) return;
@@ -499,6 +532,7 @@ function hitTest(event) {
   const center = getCenterPoint(elements.previewCanvas.width, elements.previewCanvas.height);
   let width = 0;
   let height = 0;
+  const padding = getHitPadding(event);
 
   if (type === "text") {
     const ctx = elements.previewCanvas.getContext("2d");
@@ -512,15 +546,20 @@ function hitTest(event) {
 
   if (!width || !height) return null;
 
-  const left = center.x - width / 2;
-  const top = center.y - height / 2;
-  const right = center.x + width / 2;
-  const bottom = center.y + height / 2;
+  const left = center.x - width / 2 - padding;
+  const top = center.y - height / 2 - padding;
+  const right = center.x + width / 2 + padding;
+  const bottom = center.y + height / 2 + padding;
 
   if (pos.x >= left && pos.x <= right && pos.y >= top && pos.y <= bottom) {
     return { offset: { x: pos.x - center.x, y: pos.y - center.y } };
   }
   return null;
+}
+
+function getHitPadding(event) {
+  const isTouch = event.pointerType === "touch" || window.matchMedia("(max-width: 640px)").matches;
+  return isTouch ? 24 : 8;
 }
 
 function getCenterPoint(width, height) {
@@ -587,8 +626,7 @@ if (!("showDirectoryPicker" in window)) {
   }
 }
 
-elements.previewBtn.disabled = true;
-elements.downloadBtn.disabled = true;
+setPrimaryButtonsEnabled(false);
 resetProgress();
 
 export { renderPreview, updateHint };

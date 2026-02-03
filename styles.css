@@ -14,6 +14,19 @@
   box-sizing: border-box;
 }
 
+input,
+select,
+textarea,
+button {
+  font-family: inherit;
+}
+
+input[type="range"],
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--accent);
+}
+
 html,
 body {
   height: 100%;
@@ -81,11 +94,13 @@ body {
 .layout {
   display: grid;
   grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  grid-template-areas: "panel preview";
   gap: 20px;
   padding: 24px;
 }
 
 .panel {
+  grid-area: panel;
   background: linear-gradient(160deg, var(--panel), var(--panel-alt));
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -353,6 +368,7 @@ button:disabled {
 }
 
 .preview {
+  grid-area: preview;
   background: #0c0e13;
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -367,6 +383,24 @@ button:disabled {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
+}
+
+.preview-title {
+  display: grid;
+  gap: 4px;
+}
+
+.preview-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.preview-actions {
+  display: none;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .canvas-wrap {
@@ -480,6 +514,10 @@ canvas {
   display: none;
 }
 
+.mobile-only {
+  display: none;
+}
+
 .help-body ol {
   margin: 0 0 12px;
   padding-left: 20px;
@@ -509,7 +547,11 @@ canvas {
   }
 
   .layout {
+    grid-template-areas:
+      "preview"
+      "panel";
     padding: 16px;
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
     gap: 16px;
   }
 
@@ -529,7 +571,7 @@ canvas {
   }
 
   .preview {
-    min-height: 40vh;
+    min-height: 48vh;
   }
 
   .actions {
@@ -548,6 +590,43 @@ canvas {
 
   button {
     padding: 10px 16px;
+    min-height: 44px;
+  }
+
+  .form-row input[type="text"],
+  .form-row input[type="number"],
+  .form-row select {
+    min-height: 44px;
+  }
+
+  .form-row input[type="range"] {
+    height: 36px;
+  }
+
+  .preview-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .preview-tools {
+    align-self: flex-start;
+  }
+
+  .preview-actions {
+    display: flex;
+  }
+
+  .mobile-only {
+    display: flex;
+  }
+
+  .preview-actions button {
+    flex: 1;
+  }
+
+  .icon-btn {
+    width: 40px;
+    height: 40px;
   }
 
   .modal-card {
