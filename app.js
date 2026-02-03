@@ -49,6 +49,9 @@ function updateHint(message) {
 }
 
 let renderQueued = false;
+let swipeStartX = 0;
+let swipeStartY = 0;
+let swipeStartTime = 0;
 
 function setPrimaryButtonsEnabled(enabled) {
   elements.previewBtn.disabled = !enabled;
@@ -65,6 +68,33 @@ function adjustZoom(delta) {
 function resetZoom() {
   runtime.zoom.scale = 1;
   applyZoom();
+}
+
+function updatePreviewNav() {
+  if (!elements.previewIndex) return;
+  const total = runtime.files.length;
+  const current = total ? runtime.activeImageIndex + 1 : 0;
+  elements.previewIndex.textContent = `${current} / ${total}`;
+  const canNavigate = total > 1;
+  if (elements.prevImageBtn) elements.prevImageBtn.disabled = !canNavigate || runtime.activeImageIndex === 0;
+  if (elements.nextImageBtn) elements.nextImageBtn.disabled = !canNavigate || runtime.activeImageIndex === total - 1;
+}
+
+function goToImage(index) {
+  if (!runtime.files.length) return;
+  const nextIndex = clamp(index, 0, runtime.files.length - 1);
+  if (nextIndex === runtime.activeImageIndex) return;
+  runtime.activeImageIndex = nextIndex;
+  scheduleRenderPreview();
+  updatePreviewNav();
+}
+
+function goPrevImage() {
+  goToImage(runtime.activeImageIndex - 1);
+}
+
+function goNextImage() {
+  goToImage(runtime.activeImageIndex + 1);
 }
 
 function scheduleRenderPreview() {
@@ -118,6 +148,7 @@ async function renderPreview() {
   syncLayerButtons();
   syncHint();
   saveTemplate();
+  updatePreviewNav();
 }
 
 function formatProgress(index, total, name) {
@@ -421,6 +452,7 @@ function setupEvents() {
     resetProgress();
     runtime.files = Array.from(elements.fileInput.files || []);
     runtime.activeImageIndex = 0;
+    updatePreviewNav();
     if (runtime.files.length === 0) {
       elements.fileSummary.textContent = "未选择图片";
       setPrimaryButtonsEnabled(false);
@@ -492,6 +524,43 @@ function setupEvents() {
   }
   if (elements.zoomResetBtn) {
     elements.zoomResetBtn.addEventListener("click", resetZoom);
+  }
+
+  if (elements.prevImageBtn) {
+    elements.prevImageBtn.addEventListener("click", goPrevImage);
+  }
+  if (elements.nextImageBtn) {
+    elements.nextImageBtn.addEventListener("click", goNextImage);
+  }
+
+  document.addEventListener("keydown", (event) => {
+    const tag = event.target && event.target.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+    if (event.key === "ArrowLeft") goPrevImage();
+    if (event.key === "ArrowRight") goNextImage();
+  });
+
+  const previewWrap = document.getElementById("previewWrap");
+  if (previewWrap) {
+    previewWrap.addEventListener("touchstart", (event) => {
+      const touch = event.touches && event.touches[0];
+      if (!touch) return;
+      swipeStartX = touch.clientX;
+      swipeStartY = touch.clientY;
+      swipeStartTime = Date.now();
+    }, { passive: true });
+
+    previewWrap.addEventListener("touchend", (event) => {
+      const touch = event.changedTouches && event.changedTouches[0];
+      if (!touch) return;
+      const dx = touch.clientX - swipeStartX;
+      const dy = touch.clientY - swipeStartY;
+      const dt = Date.now() - swipeStartTime;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.2 && dt < 600) {
+        if (dx < 0) goNextImage();
+        if (dx > 0) goPrevImage();
+      }
+    }, { passive: true });
   }
 
   elements.previewCanvas.addEventListener("pointerdown", (event) => {
@@ -609,12 +678,14 @@ loadTemplate(() => {
   updateExportSummary();
   updateControlAvailability();
   syncAdvancedVisibility();
+  updatePreviewNav();
 }, renderPreview);
 
 renderTemplateSelect();
 renderRecentTemplates();
 updateTemplateActions(elements.templateSelect.value);
 updateControlAvailability();
+updatePreviewNav();
 
 if (!("showDirectoryPicker" in window)) {
   const option = elements.exportMethod.querySelector('option[value="folder"]');

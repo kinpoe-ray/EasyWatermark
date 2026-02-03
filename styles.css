@@ -395,6 +395,12 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
+}
+
+#previewIndex {
+  min-width: 64px;
+  text-align: center;
 }
 
 .preview-actions {
