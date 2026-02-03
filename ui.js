@@ -144,7 +144,6 @@ export function updateExportSummary() {
   const methodMap = {
     folder: "保存到文件夹",
     individual: "逐张下载",
-    share: "保存到相册",
     zip: "ZIP",
   };
   const methodLabel = methodMap[state.export.method] || "ZIP";

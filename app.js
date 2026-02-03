@@ -189,27 +189,6 @@ async function downloadImagesIndividually() {
   });
 }
 
-async function shareSingleImage() {
-  if (!navigator.share || !navigator.canShare) return false;
-  if (runtime.files.length !== 1) {
-    updateExportReport("保存到相册仅支持单张图片，请改用逐张下载或 ZIP。");
-    return false;
-  }
-  const file = runtime.files[0];
-  const canvas = await renderImageWithWatermark(file, getSettings());
-  const { type, quality, ext } = resolveOutputFormat(file);
-  const blob = await canvasToBlob(canvas, type, quality);
-  const fileName = getOutputName(file, 0, ext);
-  const shareFile = new File([blob], fileName, { type });
-  if (!navigator.canShare({ files: [shareFile] })) {
-    updateExportReport("当前浏览器不支持分享文件到相册。");
-    return false;
-  }
-  await navigator.share({ files: [shareFile], title: "保存到相册" });
-  updateExportReport("已打开分享面板，请选择「存储到照片」。");
-  return true;
-}
-
 function getAllTemplates() {
   return [...BUILTIN_TEMPLATES, ...getSavedTemplates()];
 }
@@ -485,18 +464,11 @@ function setupEvents() {
           await downloadImagesIndividually();
           updateExportReport(`完成 ${runtime.files.length} 张图片，已逐张下载`);
         }
-      } else if (method === "share") {
-        const shared = await shareSingleImage();
-        if (!shared) {
-          setProgress(0, "无法分享，请尝试逐张下载");
-        } else {
-          setProgress(100, "完成");
-        }
       } else {
         await downloadImagesIndividually();
         updateExportReport(`完成 ${runtime.files.length} 张图片，已逐张下载`);
       }
-      if (method !== "share") setProgress(100, "完成");
+      setProgress(100, "完成");
     } catch (error) {
       if (error && error.name === "AbortError") {
         setProgress(0, "已取消");
@@ -654,15 +626,6 @@ if (!("showDirectoryPicker" in window)) {
   }
 }
 
-if (!("share" in navigator) || !("canShare" in navigator)) {
-  const option = elements.exportMethod.querySelector('option[value="share"]');
-  if (option) option.disabled = true;
-  if (elements.exportMethod.value === "share") {
-    elements.exportMethod.value = "individual";
-    syncStateFromInputs();
-    updateExportSummary();
-  }
-}
 
 setPrimaryButtonsEnabled(false);
 resetProgress();
