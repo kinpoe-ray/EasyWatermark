@@ -623,7 +623,7 @@ canvas {
   .preview-tools {
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 8px;
   }
 
@@ -642,6 +642,15 @@ canvas {
   .icon-btn {
     width: 40px;
     height: 40px;
+  }
+
+  .preview-tools .icon-btn {
+    width: 100%;
+  }
+
+  #zoomResetBtn {
+    font-size: 11px;
+    padding: 0;
   }
 
   #previewIndex {
