@@ -621,7 +621,10 @@ canvas {
   }
 
   .preview-tools {
-    align-self: flex-start;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .preview-actions {
@@ -639,6 +642,17 @@ canvas {
   .icon-btn {
     width: 40px;
     height: 40px;
+  }
+
+  #previewIndex {
+    align-self: center;
+    font-size: 12px;
+  }
+
+  .bottom-actions {
+    left: 10px;
+    right: 10px;
+    padding: 8px;
   }
 
   .modal-card {
