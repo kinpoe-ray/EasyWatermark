@@ -69,6 +69,7 @@ const i18n = {
     "btn.renderPreview": "渲染预览",
     "btn.export": "开始导出",
     "btn.done": "完成",
+    "btn.moreSettings": "更多设置",
     "section.upload": "1. 上传图片",
     "section.templates": "2. 模板",
     "section.watermark": "3. 水印设置",
@@ -145,6 +146,7 @@ const i18n = {
     "aria.zoomIn": "放大",
     "aria.help": "帮助",
     "aria.language": "语言",
+    "aria.processMode": "处理模式",
     "summary.format.auto": "原图格式",
     "summary.resize.none": "不缩放",
     "summary.resize.width": "宽度 {value}px",
@@ -183,6 +185,7 @@ const i18n = {
     "btn.renderPreview": "Render preview",
     "btn.export": "Export",
     "btn.done": "Done",
+    "btn.moreSettings": "More settings",
     "section.upload": "1. Upload images",
     "section.templates": "2. Templates",
     "section.watermark": "3. Watermark",
@@ -259,6 +262,7 @@ const i18n = {
     "aria.zoomIn": "Zoom in",
     "aria.help": "Help",
     "aria.language": "Language",
+    "aria.processMode": "Mode",
     "summary.format.auto": "Original format",
     "summary.resize.none": "No resize",
     "summary.resize.width": "Width {value}px",
@@ -376,6 +380,9 @@ function updateControlAvailability() {
   const removeOnly = state.processMode === "remove-gemini" && !state.removeThenAdd;
   setWatermarkControlsEnabled(!removeOnly);
   setLayerButtonsEnabled(!removeOnly);
+  if (elements.watermarkControls) {
+    elements.watermarkControls.classList.toggle("is-hidden", removeOnly && isMobileViewport());
+  }
 }
 
 function syncAdvancedVisibility() {
@@ -398,6 +405,14 @@ function syncHint() {
   const isMobile = window.matchMedia("(max-width: 640px)").matches;
   updateHint(isMobile ? t("hint.dragMobile") : t("hint.drag"));
   updateDragHintVisibility();
+}
+
+function syncProcessModeButtons() {
+  if (!elements.modeToggleButtons || !elements.modeToggleButtons.length) return;
+  elements.modeToggleButtons.forEach((btn) => {
+    btn.classList.toggle("is-active", btn.dataset.mode === state.processMode);
+    btn.setAttribute("aria-pressed", btn.dataset.mode === state.processMode ? "true" : "false");
+  });
 }
 
 function isMobileViewport() {
@@ -473,6 +488,17 @@ function setProgress(percent, text) {
     elements.progressFill.style.width = `${percent}%`;
   }
   elements.progress.textContent = text || "";
+}
+
+function updateFileSummary() {
+  if (!elements.fileSummary) return;
+  if (!runtime.files.length) {
+    elements.fileSummary.textContent = t("file.none");
+    return;
+  }
+  const totalSize = runtime.files.reduce((sum, file) => sum + file.size, 0);
+  const sizeMb = (totalSize / (1024 * 1024)).toFixed(2);
+  elements.fileSummary.textContent = t("file.summary", { count: runtime.files.length, size: sizeMb });
 }
 
 function resetProgress() {
@@ -593,6 +619,7 @@ function applyTemplateById(id) {
   const data = tpl.data || {};
   Object.assign(state, data, { processMode: "add", removeThenAdd: false });
   applyStateToInputs();
+  syncProcessModeButtons();
   updateExportSummary();
   if (data.logoDataUrl) {
     state.logoDataUrl = data.logoDataUrl;
@@ -649,6 +676,7 @@ function setupEvents() {
   ["wmText", "fontFamily", "wmColor", "mode", "processMode"].forEach((id) => {
     document.getElementById(id).addEventListener("input", () => {
       syncStateFromInputs();
+      syncProcessModeButtons();
       updateExportSummary();
       scheduleRenderPreview();
     });
@@ -681,6 +709,7 @@ function setupEvents() {
       elements.processModeInput.value = "add";
     }
     syncStateFromInputs();
+    syncProcessModeButtons();
     updateExportSummary();
     scheduleRenderPreview();
   });
@@ -704,6 +733,26 @@ function setupEvents() {
   elements.advancedToggle.addEventListener("click", () => {
     elements.advancedControls.classList.toggle("is-open");
   });
+
+  if (elements.moreSettingsBtn) {
+    elements.moreSettingsBtn.addEventListener("click", () => {
+      elements.watermarkControls.classList.toggle("show-advanced");
+    });
+  }
+
+  if (elements.modeToggleButtons && elements.modeToggleButtons.length) {
+    elements.modeToggleButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const mode = btn.dataset.mode;
+        if (!mode) return;
+        elements.processModeInput.value = mode;
+        syncStateFromInputs();
+        syncProcessModeButtons();
+        updateExportSummary();
+        scheduleRenderPreview();
+      });
+    });
+  }
 
   elements.templateSelect.addEventListener("change", (event) => {
     const id = event.target.value;
@@ -768,15 +817,13 @@ function setupEvents() {
     runtime.activeImageIndex = 0;
     updatePreviewNav();
     if (runtime.files.length === 0) {
-      elements.fileSummary.textContent = t("file.none");
+      updateFileSummary();
       setPrimaryButtonsEnabled(false);
       updateDragHintVisibility();
       return;
     }
 
-    const totalSize = runtime.files.reduce((sum, file) => sum + file.size, 0);
-    const sizeMb = (totalSize / (1024 * 1024)).toFixed(2);
-    elements.fileSummary.textContent = t("file.summary", { count: runtime.files.length, size: sizeMb });
+    updateFileSummary();
     setPrimaryButtonsEnabled(true);
     scheduleRenderPreview();
     if (isMobileViewport()) {
@@ -1000,6 +1047,7 @@ function downloadBlob(blob, filename) {
 updateRangeDisplays();
 applyStateToInputs();
 syncLayerButtons();
+syncProcessModeButtons();
 setupEvents();
 setupSectionToggles();
 applyMobileCollapse();
@@ -1016,9 +1064,7 @@ if (elements.langSelect) {
     updateExportSummary();
     syncHint();
     updateDragHintVisibility();
-    if (runtime.files.length === 0) {
-      elements.fileSummary.textContent = t("file.none");
-    }
+    updateFileSummary();
   });
 }
 applyI18n();
@@ -1033,6 +1079,7 @@ window.addEventListener("resize", () => {
 setupZoom();
 loadTemplate(() => {
   applyStateToInputs();
+  syncProcessModeButtons();
   updateExportSummary();
   updateControlAvailability();
   syncAdvancedVisibility();

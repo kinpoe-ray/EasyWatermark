@@ -49,6 +49,8 @@ export const elements = {
   addTextBtnMobile: document.getElementById("addTextBtnMobile"),
   addLogoBtnMobile: document.getElementById("addLogoBtnMobile"),
   removeBtnMobile: document.getElementById("removeBtnMobile"),
+  moreSettingsBtn: document.getElementById("moreSettingsBtn"),
+  modeToggleButtons: document.querySelectorAll(".mode-toggle button"),
   processModeInput: document.getElementById("processMode"),
   removeThenAddInput: document.getElementById("removeThenAdd"),
   opacityInput: document.getElementById("opacity"),

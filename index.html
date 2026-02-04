@@ -53,6 +53,10 @@
 
           <div class="section section-collapsible" data-section="watermark">
             <button class="section-title section-toggle" type="button" data-i18n="section.watermark">3. 水印设置</button>
+            <div class="mode-toggle" role="group" aria-label="处理模式" data-i18n-aria="aria.processMode">
+              <button type="button" data-mode="add" data-i18n="option.process.add">添加水印</button>
+              <button type="button" data-mode="remove-gemini" data-i18n="option.process.removeGemini">移除 Gemini 水印</button>
+            </div>
             <div class="form-row">
               <label for="processMode" data-i18n="label.processMode">处理模式</label>
               <select id="processMode">
@@ -67,12 +71,12 @@
             <div class="muted" data-i18n="hint.geminiOnly">仅移除可见 Gemini 水印，不影响 SynthID。</div>
 
             <div id="watermarkControls" class="control-group">
-              <div class="form-row">
+              <div class="form-row is-basic">
                 <label for="wmText" data-i18n="label.watermarkText">水印文字</label>
                 <input id="wmText" type="text" placeholder="水印文字" data-i18n-placeholder="placeholder.watermarkText" />
               </div>
 
-              <div class="form-row">
+              <div class="form-row is-advanced">
                 <label for="fontFamily" data-i18n="label.fontFamily">字体</label>
                 <select id="fontFamily">
                   <option value="Arial">Arial</option>
@@ -83,41 +87,45 @@
                 </select>
               </div>
 
-              <div class="form-row">
+              <div class="form-row is-basic">
                 <label for="fontSize" data-i18n="label.fontSize">字号</label>
                 <input id="fontSize" type="range" min="12" max="180" step="1" value="48" />
                 <span id="fontSizeValue" class="value">48</span>
               </div>
 
-              <div class="form-row">
+              <div class="form-row is-advanced">
                 <label for="wmColor" data-i18n="label.color">颜色</label>
                 <input id="wmColor" type="color" value="#ffffff" />
               </div>
 
-              <div class="form-row">
+              <div class="form-row is-basic">
                 <label for="opacity" data-i18n="label.opacity">透明度</label>
                 <input id="opacity" type="range" min="0" max="1" step="0.05" value="0.35" />
                 <span id="opacityValue" class="value">0.35</span>
               </div>
 
-              <div class="form-row">
+              <div class="form-row is-advanced">
                 <label for="rotation" data-i18n="label.rotation">旋转</label>
                 <input id="rotation" type="range" min="-90" max="90" step="1" value="-20" />
                 <span id="rotationValue" class="value">-20°</span>
               </div>
 
-              <div class="form-row">
+              <div class="form-row is-advanced">
                 <label for="scale" data-i18n="label.scale">缩放</label>
                 <input id="scale" type="range" min="0.2" max="3" step="0.05" value="1" />
                 <span id="scaleValue" class="value">1.00</span>
               </div>
 
-              <div class="form-row">
+              <div class="form-row is-advanced">
                 <label for="mode" data-i18n="label.watermarkMode">水印模式</label>
                 <select id="mode">
                   <option value="single" data-i18n="option.mode.single">单个</option>
                   <option value="tile" data-i18n="option.mode.tile">平铺</option>
                 </select>
+              </div>
+
+              <div class="advanced-toggle">
+                <button id="moreSettingsBtn" type="button" class="ghost" data-i18n="btn.moreSettings">更多设置</button>
               </div>
 
               <div class="advanced-toggle">
