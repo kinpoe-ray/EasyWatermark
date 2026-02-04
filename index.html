@@ -47,7 +47,7 @@
             <div class="form-row">
               <label for="templateName" data-i18n="label.templateSave">保存模板</label>
               <input id="templateName" type="text" placeholder="例如：证件防泄漏" data-i18n-placeholder="placeholder.templateName" />
-              <button id="saveTemplateBtn" type="button" data-i18n="btn.save">保存</button>
+              <button id="saveTemplateBtn" class="ghost" type="button" data-i18n="btn.save">保存</button>
             </div>
             <div class="template-recent">
               <div class="muted" data-i18n="label.recent">最近使用</div>
@@ -193,7 +193,7 @@
             <div class="actions">
               <button id="settingsBtn" class="ghost" data-i18n="btn.exportSettings">导出设置</button>
               <button id="previewBtn" class="ghost" data-i18n="btn.renderPreview">渲染预览</button>
-              <button id="downloadBtn" data-i18n="btn.export">开始导出</button>
+              <button id="downloadBtn" class="primary" data-i18n="btn.export">开始导出</button>
             </div>
             <div id="exportSummary" class="muted"></div>
             <div class="progress-wrap">
@@ -236,7 +236,7 @@
           </div>
           <div class="preview-actions mobile-only">
             <button id="settingsBtnMobile" class="ghost" type="button" data-i18n="btn.exportSettings">导出设置</button>
-            <button id="downloadBtnMobile" type="button" data-i18n="btn.export">开始导出</button>
+            <button id="downloadBtnMobile" class="primary" type="button" data-i18n="btn.export">开始导出</button>
           </div>
         </section>
       </main>
