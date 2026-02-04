@@ -39,6 +39,7 @@ export const elements = {
   saveTemplateBtn: document.getElementById("saveTemplateBtn"),
   deleteTemplateBtn: document.getElementById("deleteTemplateBtn"),
   recentTemplates: document.getElementById("recentTemplates"),
+  langSelect: document.getElementById("langSelect"),
   watermarkControls: document.getElementById("watermarkControls"),
   advancedToggle: document.getElementById("advancedToggle"),
   advancedControls: document.getElementById("advancedControls"),
@@ -76,7 +77,21 @@ export const elements = {
   modeSelect: document.getElementById("mode"),
   formatSelect: document.getElementById("format"),
   exportMethod: document.getElementById("exportMethod"),
+  langSelect: document.getElementById("langSelect"),
 };
+
+let translate = (key, vars = {}) => {
+  let text = key;
+  Object.entries(vars).forEach(([name, value]) => {
+    text = text.replaceAll(`{${name}}`, value);
+  });
+  return text;
+};
+
+export function setI18n(fn) {
+  translate = fn;
+  updateExportSummary();
+}
 
 export function updateRangeDisplays() {
   elements.opacityValue.textContent = elements.opacityInput.value;
@@ -139,22 +154,27 @@ export function syncStateFromInputs() {
 }
 
 export function updateExportSummary() {
-  const formatLabel = state.export.format === "auto" ? "原图格式" : state.export.format.toUpperCase();
-  let resizeLabel = "不缩放";
-  if (state.export.resizeMode === "width") resizeLabel = `宽度 ${state.export.resizeValue}px`;
-  if (state.export.resizeMode === "height") resizeLabel = `高度 ${state.export.resizeValue}px`;
-  if (state.export.resizeMode === "max") resizeLabel = `最长边 ${state.export.resizeValue}px`;
-  let renameLabel = "保留原名";
-  if (state.export.renameMode === "prefix") renameLabel = `前缀 ${state.export.renamePrefix || "wm_"}`;
-  if (state.export.renameMode === "suffix") renameLabel = `后缀 ${state.export.renameSuffix || "_watermarked"}`;
-  if (state.export.renameMode === "sequence") renameLabel = `序列起始 ${state.export.sequenceStart || 1}`;
+  const formatLabel = state.export.format === "auto" ? translate("summary.format.auto") : state.export.format.toUpperCase();
+  let resizeLabel = translate("summary.resize.none");
+  if (state.export.resizeMode === "width") resizeLabel = translate("summary.resize.width", { value: state.export.resizeValue });
+  if (state.export.resizeMode === "height") resizeLabel = translate("summary.resize.height", { value: state.export.resizeValue });
+  if (state.export.resizeMode === "max") resizeLabel = translate("summary.resize.max", { value: state.export.resizeValue });
+  let renameLabel = translate("summary.rename.keep");
+  if (state.export.renameMode === "prefix") renameLabel = translate("summary.rename.prefix", { value: state.export.renamePrefix || "wm_" });
+  if (state.export.renameMode === "suffix") renameLabel = translate("summary.rename.suffix", { value: state.export.renameSuffix || "_watermarked" });
+  if (state.export.renameMode === "sequence") renameLabel = translate("summary.rename.sequence", { value: state.export.sequenceStart || 1 });
   const methodMap = {
-    folder: "保存到文件夹",
-    individual: "逐张下载",
-    zip: "ZIP",
+    folder: translate("summary.method.folder"),
+    individual: translate("summary.method.individual"),
+    zip: translate("summary.method.zip"),
   };
-  const methodLabel = methodMap[state.export.method] || "ZIP";
-  elements.exportSummary.textContent = `${formatLabel} · ${resizeLabel} · ${renameLabel} · ${methodLabel}`;
+  const methodLabel = methodMap[state.export.method] || translate("summary.method.zip");
+  elements.exportSummary.textContent = translate("summary.template", {
+    format: formatLabel,
+    resize: resizeLabel,
+    rename: renameLabel,
+    method: methodLabel,
+  });
   updateExportMethodTip();
 }
 
@@ -162,14 +182,14 @@ export function updateExportMethodTip() {
   if (!elements.exportMethodTip) return;
   const method = state.export.method;
   if (method === "folder") {
-    elements.exportMethodTip.textContent = "保存到文件夹：仅桌面 Chrome/Edge 支持；iOS Safari 会自动改为「逐张下载」。";
+    elements.exportMethodTip.textContent = translate("export.tip.folder");
     return;
   }
   if (method === "individual") {
-    elements.exportMethodTip.textContent = "逐张下载：会触发多次下载提示，适合少量图片。";
+    elements.exportMethodTip.textContent = translate("export.tip.individual");
     return;
   }
-  elements.exportMethodTip.textContent = "ZIP 打包：只下载一个文件，适合移动端与批量导出。";
+  elements.exportMethodTip.textContent = translate("export.tip.zip");
 }
 
 export function setActiveTileStyle(style) {

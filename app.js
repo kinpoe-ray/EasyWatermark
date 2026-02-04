@@ -35,6 +35,7 @@ import {
   setupSectionToggles,
   setupZoom,
   applyZoom,
+  setI18n,
 } from "./ui.js";
 
 function getSettings() {
@@ -53,6 +54,266 @@ let swipeStartX = 0;
 let swipeStartY = 0;
 let swipeStartTime = 0;
 const DRAG_HINT_KEY = "easy-watermark-drag-hint-dismissed";
+const LANG_KEY = "easy-watermark-lang";
+let currentLang = "zh";
+
+const i18n = {
+  zh: {
+    "btn.textWatermark": "文字水印",
+    "btn.logoWatermark": "Logo 水印",
+    "btn.clearWatermark": "清除水印",
+    "btn.delete": "删除",
+    "btn.save": "保存",
+    "btn.advanced": "高级设置",
+    "btn.exportSettings": "导出设置",
+    "btn.renderPreview": "渲染预览",
+    "btn.export": "开始导出",
+    "btn.done": "完成",
+    "section.upload": "1. 上传图片",
+    "section.templates": "2. 模板",
+    "section.watermark": "3. 水印设置",
+    "section.export": "4. 导出",
+    "label.templateSelect": "模板选择",
+    "label.templateSave": "保存模板",
+    "label.recent": "最近使用",
+    "label.processMode": "处理模式",
+    "label.removeThenAdd": "去除后再添加",
+    "label.watermarkText": "水印文字",
+    "label.fontFamily": "字体",
+    "label.fontSize": "字号",
+    "label.color": "颜色",
+    "label.opacity": "透明度",
+    "label.rotation": "旋转",
+    "label.scale": "缩放",
+    "label.watermarkMode": "水印模式",
+    "label.tileDensity": "平铺密度",
+    "label.density": "密度",
+    "label.tileGap": "平铺间距",
+    "label.preview": "预览",
+    "label.exportMethod": "导出方式",
+    "label.fileFormat": "文件格式",
+    "label.jpgQuality": "JPG 质量",
+    "label.resizeMode": "缩放方式",
+    "label.resizeValue": "缩放数值",
+    "label.rename": "重命名",
+    "label.renamePrefix": "前缀",
+    "label.renameSuffix": "后缀",
+    "label.sequenceStart": "序号起始",
+    "label.randomPosition": "随机位置",
+    "label.keepMeta": "保留元数据",
+    "option.process.add": "添加水印",
+    "option.process.removeGemini": "移除 Gemini 水印",
+    "option.mode.single": "单个",
+    "option.mode.tile": "平铺",
+    "option.export.folder": "保存到文件夹（推荐）",
+    "option.export.individual": "逐张下载",
+    "option.export.zip": "打包 ZIP",
+    "option.format.auto": "原图格式",
+    "option.resize.none": "不缩放",
+    "option.resize.width": "指定宽度",
+    "option.resize.height": "指定高度",
+    "option.resize.max": "限制最长边",
+    "option.rename.keep": "保留原文件名",
+    "option.rename.prefix": "添加前缀",
+    "option.rename.suffix": "添加后缀",
+    "option.rename.sequence": "按序号重命名",
+    "placeholder.templateName": "例如：证件防泄漏",
+    "placeholder.watermarkText": "水印文字",
+    "hint.geminiOnly": "仅移除可见 Gemini 水印，不影响 SynthID。",
+    "hint.drag": "拖动水印调整位置",
+    "hint.dragMobile": "拖动水印调整位置 · 双指缩放预览",
+    "hint.tile": "平铺模式无法拖动",
+    "hint.remove": "Gemini 可见水印移除（不影响 SynthID）",
+    "hint.randomPosition": "随机位置只在 Single 水印模式下生效。",
+    "hint.keepMeta": "浏览器端无法保留 EXIF 元数据。",
+    "file.none": "未选择图片",
+    "footer.note": "全部处理在本地浏览器完成，不上传图片。作者：",
+    "help.title": "使用指南",
+    "help.step1": "上传图片后会显示预览。",
+    "help.step2": "选择处理模式：添加水印 / 去除 Gemini 水印。",
+    "help.step3": "需要去除后再添加时，勾选「Remove → Add」。",
+    "help.step4": "文本或 Logo 水印可拖拽调整位置（单个水印模式）。",
+    "help.step5": "点击「导出设置」配置格式、尺寸与命名。",
+    "help.step6": "选择导出方式后点击「开始导出」。",
+    "help.tip1": "提示：Chrome/Edge 可选择保存文件夹，其他浏览器会触发多次下载。",
+    "help.tip2": "提示：去除仅对 Gemini 可见水印有效，不影响 SynthID。",
+    "modal.exportSettings": "导出设置",
+    "aria.prev": "上一张",
+    "aria.next": "下一张",
+    "aria.zoomOut": "缩小",
+    "aria.zoomReset": "重置缩放",
+    "aria.zoomIn": "放大",
+    "aria.help": "帮助",
+    "aria.language": "语言",
+    "summary.format.auto": "原图格式",
+    "summary.resize.none": "不缩放",
+    "summary.resize.width": "宽度 {value}px",
+    "summary.resize.height": "高度 {value}px",
+    "summary.resize.max": "最长边 {value}px",
+    "summary.rename.keep": "保留原名",
+    "summary.rename.prefix": "前缀 {value}",
+    "summary.rename.suffix": "后缀 {value}",
+    "summary.rename.sequence": "序列起始 {value}",
+    "summary.method.folder": "保存到文件夹",
+    "summary.method.individual": "逐张下载",
+    "summary.method.zip": "ZIP",
+    "summary.template": "{format} · {resize} · {rename} · {method}",
+    "export.tip.folder": "保存到文件夹：仅桌面 Chrome/Edge 支持；iOS Safari 会自动改为「逐张下载」。",
+    "export.tip.individual": "逐张下载：会触发多次下载提示，适合少量图片。",
+    "export.tip.zip": "ZIP 打包：只下载一个文件，适合移动端与批量导出。",
+    "progress.processing": "处理中 {index}/{total} ({percent}%) · {name}",
+    "progress.start": "开始渲染...",
+    "progress.zipping": "正在打包...",
+    "progress.done": "完成",
+    "progress.canceled": "已取消",
+    "progress.failed": "失败，请查看控制台",
+    "report.zip": "完成 {count} 张图片，已打包 ZIP",
+    "report.folder": "完成 {count} 张图片，已保存到文件夹",
+    "report.individual": "完成 {count} 张图片，已逐张下载",
+    "file.summary": "{count} 张图片 ({size} MB)",
+  },
+  en: {
+    "btn.textWatermark": "Text watermark",
+    "btn.logoWatermark": "Logo watermark",
+    "btn.clearWatermark": "Clear watermark",
+    "btn.delete": "Delete",
+    "btn.save": "Save",
+    "btn.advanced": "Advanced",
+    "btn.exportSettings": "Export settings",
+    "btn.renderPreview": "Render preview",
+    "btn.export": "Export",
+    "btn.done": "Done",
+    "section.upload": "1. Upload images",
+    "section.templates": "2. Templates",
+    "section.watermark": "3. Watermark",
+    "section.export": "4. Export",
+    "label.templateSelect": "Template",
+    "label.templateSave": "Save template",
+    "label.recent": "Recent",
+    "label.processMode": "Mode",
+    "label.removeThenAdd": "Remove then add",
+    "label.watermarkText": "Text",
+    "label.fontFamily": "Font",
+    "label.fontSize": "Size",
+    "label.color": "Color",
+    "label.opacity": "Opacity",
+    "label.rotation": "Rotation",
+    "label.scale": "Scale",
+    "label.watermarkMode": "Watermark mode",
+    "label.tileDensity": "Tile density",
+    "label.density": "Density",
+    "label.tileGap": "Tile gap",
+    "label.preview": "Preview",
+    "label.exportMethod": "Export method",
+    "label.fileFormat": "File format",
+    "label.jpgQuality": "JPG quality",
+    "label.resizeMode": "Resize mode",
+    "label.resizeValue": "Resize value",
+    "label.rename": "Rename",
+    "label.renamePrefix": "Prefix",
+    "label.renameSuffix": "Suffix",
+    "label.sequenceStart": "Sequence start",
+    "label.randomPosition": "Random position",
+    "label.keepMeta": "Keep metadata",
+    "option.process.add": "Add watermark",
+    "option.process.removeGemini": "Remove Gemini watermark",
+    "option.mode.single": "Single",
+    "option.mode.tile": "Tiled",
+    "option.export.folder": "Save to folder (recommended)",
+    "option.export.individual": "Download individually",
+    "option.export.zip": "ZIP archive",
+    "option.format.auto": "Original format",
+    "option.resize.none": "No resize",
+    "option.resize.width": "Set width",
+    "option.resize.height": "Set height",
+    "option.resize.max": "Max side",
+    "option.rename.keep": "Keep original filename",
+    "option.rename.prefix": "Add prefix",
+    "option.rename.suffix": "Add suffix",
+    "option.rename.sequence": "Rename as sequence",
+    "placeholder.templateName": "e.g. ID protection",
+    "placeholder.watermarkText": "Watermark text",
+    "hint.geminiOnly": "Removes visible Gemini watermark only. Does not affect SynthID.",
+    "hint.drag": "Drag to move watermark",
+    "hint.dragMobile": "Drag to move watermark · Pinch to zoom preview",
+    "hint.tile": "Tiled mode cannot be dragged",
+    "hint.remove": "Gemini visible watermark removal (does not affect SynthID)",
+    "hint.randomPosition": "Random position only applies to Single watermark mode.",
+    "hint.keepMeta": "EXIF metadata cannot be preserved in the browser.",
+    "file.none": "No images selected",
+    "footer.note": "All processing happens locally in your browser. Images are not uploaded. Author:",
+    "help.title": "Quick guide",
+    "help.step1": "Upload images to see preview.",
+    "help.step2": "Choose mode: add watermark or remove Gemini watermark.",
+    "help.step3": "Enable “Remove → Add” if you want to add after removal.",
+    "help.step4": "Drag text or logo in Single mode.",
+    "help.step5": "Use Export settings to configure format, size, and naming.",
+    "help.step6": "Select export method and tap Export.",
+    "help.tip1": "Tip: Chrome/Edge can save to a folder. Other browsers trigger multiple downloads.",
+    "help.tip2": "Tip: Removal only affects visible Gemini watermark, not SynthID.",
+    "modal.exportSettings": "Export settings",
+    "aria.prev": "Previous",
+    "aria.next": "Next",
+    "aria.zoomOut": "Zoom out",
+    "aria.zoomReset": "Reset zoom",
+    "aria.zoomIn": "Zoom in",
+    "aria.help": "Help",
+    "aria.language": "Language",
+    "summary.format.auto": "Original format",
+    "summary.resize.none": "No resize",
+    "summary.resize.width": "Width {value}px",
+    "summary.resize.height": "Height {value}px",
+    "summary.resize.max": "Max side {value}px",
+    "summary.rename.keep": "Keep original name",
+    "summary.rename.prefix": "Prefix {value}",
+    "summary.rename.suffix": "Suffix {value}",
+    "summary.rename.sequence": "Sequence start {value}",
+    "summary.method.folder": "Save to folder",
+    "summary.method.individual": "Download individually",
+    "summary.method.zip": "ZIP",
+    "summary.template": "{format} · {resize} · {rename} · {method}",
+    "export.tip.folder": "Save to folder: desktop Chrome/Edge only; iOS Safari will fall back to downloads.",
+    "export.tip.individual": "Individual downloads: triggers multiple prompts, best for small batches.",
+    "export.tip.zip": "ZIP archive: single download, best for mobile and batches.",
+    "progress.processing": "Processing {index}/{total} ({percent}%) · {name}",
+    "progress.start": "Starting...",
+    "progress.zipping": "Zipping...",
+    "progress.done": "Done",
+    "progress.canceled": "Canceled",
+    "progress.failed": "Failed, see console",
+    "report.zip": "Finished {count} images, ZIP created",
+    "report.folder": "Finished {count} images, saved to folder",
+    "report.individual": "Finished {count} images, downloaded individually",
+    "file.summary": "{count} images ({size} MB)",
+  },
+};
+
+function t(key, vars = {}) {
+  const dict = i18n[currentLang] || i18n.zh;
+  let text = dict[key] || i18n.zh[key] || key;
+  Object.entries(vars).forEach(([name, value]) => {
+    text = text.replaceAll(`{${name}}`, value);
+  });
+  return text;
+}
+
+function applyI18n() {
+  const dict = i18n[currentLang] || i18n.zh;
+  document.documentElement.lang = currentLang === "en" ? "en" : "zh-CN";
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    const key = el.dataset.i18n;
+    if (dict[key]) el.textContent = dict[key];
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+    const key = el.dataset.i18nPlaceholder;
+    if (dict[key]) el.setAttribute("placeholder", dict[key]);
+  });
+  document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
+    const key = el.dataset.i18nAria;
+    if (dict[key]) el.setAttribute("aria-label", dict[key]);
+  });
+  setI18n(t);
+}
 
 function setPrimaryButtonsEnabled(enabled) {
   elements.previewBtn.disabled = !enabled;
@@ -125,17 +386,17 @@ function syncAdvancedVisibility() {
 
 function syncHint() {
   if (state.processMode === "remove-gemini" && !state.removeThenAdd) {
-    updateHint("Gemini 可见水印移除（不影响 SynthID）");
+    updateHint(t("hint.remove"));
     updateDragHintVisibility();
     return;
   }
   if (state.mode === "tile") {
-    updateHint("平铺模式无法拖动");
+    updateHint(t("hint.tile"));
     updateDragHintVisibility();
     return;
   }
   const isMobile = window.matchMedia("(max-width: 640px)").matches;
-  updateHint(isMobile ? "拖动水印调整位置 · 双指缩放预览" : "拖动水印调整位置");
+  updateHint(isMobile ? t("hint.dragMobile") : t("hint.drag"));
   updateDragHintVisibility();
 }
 
@@ -204,8 +465,7 @@ async function renderPreview() {
 
 function formatProgress(index, total, name) {
   const percent = Math.round((index / total) * 100);
-  const safeName = name ? ` · ${name}` : "";
-  return `处理中 ${index}/${total} (${percent}%)${safeName}`;
+  return t("progress.processing", { index, total, percent, name: name || "" }).trim();
 }
 
 function setProgress(percent, text) {
@@ -508,7 +768,7 @@ function setupEvents() {
     runtime.activeImageIndex = 0;
     updatePreviewNav();
     if (runtime.files.length === 0) {
-      elements.fileSummary.textContent = "未选择图片";
+      elements.fileSummary.textContent = t("file.none");
       setPrimaryButtonsEnabled(false);
       updateDragHintVisibility();
       return;
@@ -516,7 +776,7 @@ function setupEvents() {
 
     const totalSize = runtime.files.reduce((sum, file) => sum + file.size, 0);
     const sizeMb = (totalSize / (1024 * 1024)).toFixed(2);
-    elements.fileSummary.textContent = `${runtime.files.length} 张图片 (${sizeMb} MB)`;
+    elements.fileSummary.textContent = t("file.summary", { count: runtime.files.length, size: sizeMb });
     setPrimaryButtonsEnabled(true);
     scheduleRenderPreview();
     if (isMobileViewport()) {
@@ -533,7 +793,7 @@ function setupEvents() {
   elements.downloadBtn.addEventListener("click", async () => {
     if (runtime.files.length === 0) return;
     setPrimaryButtonsEnabled(false);
-    setProgress(0, "开始渲染...");
+    setProgress(0, t("progress.start"));
     updateExportReport("");
 
     try {
@@ -543,29 +803,29 @@ function setupEvents() {
         await buildOutputs(async ({ blob, fileName }) => {
           zip.file(fileName, blob);
         });
-        setProgress(100, "正在打包...");
+        setProgress(100, t("progress.zipping"));
         const zipBlob = await zip.generateAsync({ type: "blob" });
         downloadBlob(zipBlob, `watermark-kpr-${Date.now()}.zip`);
-        updateExportReport(`完成 ${runtime.files.length} 张图片，已打包 ZIP`);
+        updateExportReport(t("report.zip", { count: runtime.files.length }));
       } else if (method === "folder") {
         if ("showDirectoryPicker" in window) {
           await saveImagesToFolder();
-          updateExportReport(`完成 ${runtime.files.length} 张图片，已保存到文件夹`);
+          updateExportReport(t("report.folder", { count: runtime.files.length }));
         } else {
           await downloadImagesIndividually();
-          updateExportReport(`完成 ${runtime.files.length} 张图片，已逐张下载`);
+          updateExportReport(t("report.individual", { count: runtime.files.length }));
         }
       } else {
         await downloadImagesIndividually();
-        updateExportReport(`完成 ${runtime.files.length} 张图片，已逐张下载`);
+        updateExportReport(t("report.individual", { count: runtime.files.length }));
       }
-      setProgress(100, "完成");
+      setProgress(100, t("progress.done"));
     } catch (error) {
       if (error && error.name === "AbortError") {
-        setProgress(0, "已取消");
+        setProgress(0, t("progress.canceled"));
       } else {
         console.error(error);
-        setProgress(0, "失败，请查看控制台");
+        setProgress(0, t("progress.failed"));
       }
     } finally {
       setPrimaryButtonsEnabled(true);
@@ -745,10 +1005,30 @@ setupSectionToggles();
 applyMobileCollapse();
 syncMobileSections();
 updateDragHintVisibility();
+const storedLang = localStorage.getItem(LANG_KEY);
+currentLang = storedLang || "zh";
+if (elements.langSelect) {
+  elements.langSelect.value = currentLang;
+  elements.langSelect.addEventListener("change", (event) => {
+    currentLang = event.target.value === "en" ? "en" : "zh";
+    localStorage.setItem(LANG_KEY, currentLang);
+    applyI18n();
+    updateExportSummary();
+    syncHint();
+    updateDragHintVisibility();
+    if (runtime.files.length === 0) {
+      elements.fileSummary.textContent = t("file.none");
+    }
+  });
+}
+applyI18n();
+updateExportSummary();
+syncHint();
 window.addEventListener("resize", () => {
   applyMobileCollapse();
   syncMobileSections();
   updateDragHintVisibility();
+  syncHint();
 });
 setupZoom();
 loadTemplate(() => {

@@ -99,6 +99,15 @@ body {
   gap: 10px;
 }
 
+.lang-select {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 10px;
+  min-height: 36px;
+}
+
 .layout {
   display: grid;
   grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);

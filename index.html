@@ -15,61 +15,65 @@
           <span class="brand brand-gradient">WaterMark KinPoeRay</span>
         </div>
         <div class="topbar-actions">
-          <button id="addTextBtn" class="ghost">文字水印</button>
-          <button id="addLogoBtn" class="ghost">Logo 水印</button>
-          <button id="removeBtn" class="danger">清除水印</button>
+          <button id="addTextBtn" class="ghost" data-i18n="btn.textWatermark">文字水印</button>
+          <button id="addLogoBtn" class="ghost" data-i18n="btn.logoWatermark">Logo 水印</button>
+          <button id="removeBtn" class="danger" data-i18n="btn.clearWatermark">清除水印</button>
+          <select id="langSelect" class="lang-select" aria-label="Language" data-i18n-aria="aria.language">
+            <option value="zh">中文</option>
+            <option value="en">English</option>
+          </select>
         </div>
       </header>
 
       <main class="layout">
         <section class="panel">
           <div class="section section-collapsible" data-section="upload">
-            <button class="section-title section-toggle" type="button">1. 上传图片</button>
+            <button class="section-title section-toggle" type="button" data-i18n="section.upload">1. 上传图片</button>
             <input id="fileInput" type="file" accept="image/*" multiple />
-            <div id="fileSummary" class="muted">未选择图片</div>
+            <div id="fileSummary" class="muted" data-i18n="file.none">未选择图片</div>
           </div>
 
           <div class="section section-collapsible" data-section="templates">
-            <button class="section-title section-toggle" type="button">2. 模板</button>
+            <button class="section-title section-toggle" type="button" data-i18n="section.templates">2. 模板</button>
             <div class="form-row">
-              <label for="templateSelect">模板选择</label>
+              <label for="templateSelect" data-i18n="label.templateSelect">模板选择</label>
               <select id="templateSelect"></select>
-              <button id="deleteTemplateBtn" class="ghost" type="button">删除</button>
+              <button id="deleteTemplateBtn" class="ghost" type="button" data-i18n="btn.delete">删除</button>
             </div>
             <div class="form-row">
-              <label for="templateName">保存模板</label>
-              <input id="templateName" type="text" placeholder="例如：证件防泄漏" />
-              <button id="saveTemplateBtn" type="button">保存</button>
+              <label for="templateName" data-i18n="label.templateSave">保存模板</label>
+              <input id="templateName" type="text" placeholder="例如：证件防泄漏" data-i18n-placeholder="placeholder.templateName" />
+              <button id="saveTemplateBtn" type="button" data-i18n="btn.save">保存</button>
             </div>
             <div class="template-recent">
-              <div class="muted">最近使用</div>
+              <div class="muted" data-i18n="label.recent">最近使用</div>
               <div id="recentTemplates" class="template-chips"></div>
             </div>
           </div>
 
           <div class="section section-collapsible" data-section="watermark">
-            <button class="section-title section-toggle" type="button">3. 水印设置</button>
+            <button class="section-title section-toggle" type="button" data-i18n="section.watermark">3. 水印设置</button>
             <div class="form-row">
-              <label for="processMode">处理模式</label>
+              <label for="processMode" data-i18n="label.processMode">处理模式</label>
               <select id="processMode">
-                <option value="add">添加水印</option>
-                <option value="remove-gemini">移除 Gemini 水印</option>
+                <option value="add" data-i18n="option.process.add">添加水印</option>
+                <option value="remove-gemini" data-i18n="option.process.removeGemini">移除 Gemini 水印</option>
               </select>
             </div>
             <div class="form-row">
-              <label for="removeThenAdd">去除后再添加</label>
+              <label for="removeThenAdd" data-i18n="label.removeThenAdd">去除后再添加</label>
               <input id="removeThenAdd" type="checkbox" />
             </div>
-            <div class="muted">仅移除可见 Gemini 水印，不影响 SynthID。</div>
+            <div class="muted" data-i18n="hint.geminiOnly">仅移除可见 Gemini 水印，不影响 SynthID。</div>
 
             <div id="watermarkControls" class="control-group">
               <div class="form-row">
-                <label for="wmText">水印文字</label>
-                <input id="wmText" type="text" placeholder="Your watermark" />
+                <label for="wmText" data-i18n="label.watermarkText">水印文字</label>
+                <input id="wmText" type="text" placeholder="水印文字" data-i18n-placeholder="placeholder.watermarkText" />
               </div>
 
               <div class="form-row">
-                <label for="fontFamily">字体</label>
+                <label for="fontFamily" data-i18n="label.fontFamily">字体</label>
                 <select id="fontFamily">
                   <option value="Arial">Arial</option>
                   <option value="PingFang SC">PingFang SC</option>
@@ -80,49 +84,49 @@
               </div>
 
               <div class="form-row">
-                <label for="fontSize">字号</label>
+                <label for="fontSize" data-i18n="label.fontSize">字号</label>
                 <input id="fontSize" type="range" min="12" max="180" step="1" value="48" />
                 <span id="fontSizeValue" class="value">48</span>
               </div>
 
               <div class="form-row">
-                <label for="wmColor">颜色</label>
+                <label for="wmColor" data-i18n="label.color">颜色</label>
                 <input id="wmColor" type="color" value="#ffffff" />
               </div>
 
               <div class="form-row">
-                <label for="opacity">透明度</label>
+                <label for="opacity" data-i18n="label.opacity">透明度</label>
                 <input id="opacity" type="range" min="0" max="1" step="0.05" value="0.35" />
                 <span id="opacityValue" class="value">0.35</span>
               </div>
 
               <div class="form-row">
-                <label for="rotation">旋转</label>
+                <label for="rotation" data-i18n="label.rotation">旋转</label>
                 <input id="rotation" type="range" min="-90" max="90" step="1" value="-20" />
                 <span id="rotationValue" class="value">-20°</span>
               </div>
 
               <div class="form-row">
-                <label for="scale">缩放</label>
+                <label for="scale" data-i18n="label.scale">缩放</label>
                 <input id="scale" type="range" min="0.2" max="3" step="0.05" value="1" />
                 <span id="scaleValue" class="value">1.00</span>
               </div>
 
               <div class="form-row">
-                <label for="mode">水印模式</label>
+                <label for="mode" data-i18n="label.watermarkMode">水印模式</label>
                 <select id="mode">
-                  <option value="single">单个</option>
-                  <option value="tile">平铺</option>
+                  <option value="single" data-i18n="option.mode.single">单个</option>
+                  <option value="tile" data-i18n="option.mode.tile">平铺</option>
                 </select>
               </div>
 
               <div class="advanced-toggle">
-                <button id="advancedToggle" type="button" class="ghost">高级设置</button>
+                <button id="advancedToggle" type="button" class="ghost" data-i18n="btn.advanced">高级设置</button>
               </div>
 
               <div id="advancedControls" class="advanced-controls">
                 <div class="form-row">
-                  <label>平铺密度</label>
+                  <label data-i18n="label.tileDensity">平铺密度</label>
                   <div class="tile-style" id="tileStyle">
                     <button type="button" data-style="single" class="tile-btn is-active" aria-label="Single tile">
                       <span class="dot-grid grid-1"></span>
@@ -134,11 +138,11 @@
                       <span class="dot-grid grid-3"></span>
                     </button>
                   </div>
-                  <span class="value muted">密度</span>
+                  <span class="value muted" data-i18n="label.density">密度</span>
                 </div>
 
                 <div class="form-row">
-                  <label for="tileGap">平铺间距</label>
+                  <label for="tileGap" data-i18n="label.tileGap">平铺间距</label>
                   <input id="tileGap" type="range" min="0" max="600" step="5" value="180" />
                   <span id="tileGapValue" class="value">180</span>
                 </div>
@@ -152,16 +156,16 @@
           </div>
 
           <div class="section section-collapsible" data-section="export">
-            <button class="section-title section-toggle" type="button">4. 导出</button>
-          <div class="actions">
-            <button id="settingsBtn" class="ghost">导出设置</button>
-            <button id="previewBtn" class="ghost">渲染预览</button>
-            <button id="downloadBtn">开始导出</button>
-          </div>
-          <div id="exportSummary" class="muted"></div>
-          <div class="progress-wrap">
-            <div class="progress-bar">
-              <div id="progressFill" class="progress-bar-fill"></div>
+            <button class="section-title section-toggle" type="button" data-i18n="section.export">4. 导出</button>
+            <div class="actions">
+              <button id="settingsBtn" class="ghost" data-i18n="btn.exportSettings">导出设置</button>
+              <button id="previewBtn" class="ghost" data-i18n="btn.renderPreview">渲染预览</button>
+              <button id="downloadBtn" data-i18n="btn.export">开始导出</button>
+            </div>
+            <div id="exportSummary" class="muted"></div>
+            <div class="progress-wrap">
+              <div class="progress-bar">
+                <div id="progressFill" class="progress-bar-fill"></div>
             </div>
               <div class="progress-meta">
                 <img id="exportThumb" alt="export preview" />
@@ -177,64 +181,64 @@
         <section class="preview">
           <div class="preview-header">
             <div class="preview-title">
-              <span>Preview</span>
-              <span class="muted" id="hint">拖动水印调整位置</span>
+              <span data-i18n="label.preview">预览</span>
+              <span class="muted" id="hint" data-i18n="hint.drag">拖动水印调整位置</span>
             </div>
             <div class="preview-tools">
-              <button id="prevImageBtn" class="icon-btn" type="button" aria-label="上一张">←</button>
+              <button id="prevImageBtn" class="icon-btn" type="button" aria-label="上一张" data-i18n-aria="aria.prev">←</button>
               <span id="previewIndex" class="muted">0 / 0</span>
-              <button id="nextImageBtn" class="icon-btn" type="button" aria-label="下一张">→</button>
-              <button id="zoomOutBtn" class="icon-btn" type="button" aria-label="缩小">-</button>
-              <button id="zoomResetBtn" class="icon-btn" type="button" aria-label="重置缩放">100%</button>
-              <button id="zoomInBtn" class="icon-btn" type="button" aria-label="放大">+</button>
+              <button id="nextImageBtn" class="icon-btn" type="button" aria-label="下一张" data-i18n-aria="aria.next">→</button>
+              <button id="zoomOutBtn" class="icon-btn" type="button" aria-label="缩小" data-i18n-aria="aria.zoomOut">-</button>
+              <button id="zoomResetBtn" class="icon-btn" type="button" aria-label="重置缩放" data-i18n-aria="aria.zoomReset">100%</button>
+              <button id="zoomInBtn" class="icon-btn" type="button" aria-label="放大" data-i18n-aria="aria.zoomIn">+</button>
             </div>
           </div>
           <div class="canvas-wrap" id="previewWrap">
-            <button id="prevImageBtnOverlay" class="preview-nav-btn" type="button" aria-label="上一张">←</button>
+            <button id="prevImageBtnOverlay" class="preview-nav-btn" type="button" aria-label="上一张" data-i18n-aria="aria.prev">←</button>
             <div class="preview-viewport" id="previewViewport">
               <canvas id="previewCanvas"></canvas>
             </div>
-            <div id="dragHint" class="drag-hint">拖动水印调整位置 · 双指缩放预览</div>
-            <button id="nextImageBtnOverlay" class="preview-nav-btn" type="button" aria-label="下一张">→</button>
+            <div id="dragHint" class="drag-hint" data-i18n="hint.dragMobile">拖动水印调整位置 · 双指缩放预览</div>
+            <button id="nextImageBtnOverlay" class="preview-nav-btn" type="button" aria-label="下一张" data-i18n-aria="aria.next">→</button>
           </div>
           <div class="preview-actions mobile-only">
-            <button id="settingsBtnMobile" class="ghost" type="button">导出设置</button>
-            <button id="downloadBtnMobile" type="button">开始导出</button>
+            <button id="settingsBtnMobile" class="ghost" type="button" data-i18n="btn.exportSettings">导出设置</button>
+            <button id="downloadBtnMobile" type="button" data-i18n="btn.export">开始导出</button>
           </div>
         </section>
       </main>
 
       <footer class="footer">
-        全部处理在本地浏览器完成，不上传图片。作者：
+        <span data-i18n="footer.note">全部处理在本地浏览器完成，不上传图片。作者：</span>
         <a class="author-link" href="https://x.com/kinpoe_ray" target="_blank" rel="noopener">@kinpoe_ray</a>
       </footer>
     </div>
 
     <div class="bottom-actions">
-      <button id="addTextBtnMobile" class="ghost">文字水印</button>
-      <button id="addLogoBtnMobile" class="ghost">Logo 水印</button>
-      <button id="removeBtnMobile" class="danger">清除水印</button>
+      <button id="addTextBtnMobile" class="ghost" data-i18n="btn.textWatermark">文字水印</button>
+      <button id="addLogoBtnMobile" class="ghost" data-i18n="btn.logoWatermark">Logo 水印</button>
+      <button id="removeBtnMobile" class="danger" data-i18n="btn.clearWatermark">清除水印</button>
     </div>
 
-    <button id="helpBtn" class="help-btn">?</button>
+    <button id="helpBtn" class="help-btn" aria-label="帮助" data-i18n-aria="aria.help">?</button>
 
     <div id="helpModal" class="modal">
       <div class="modal-card">
         <div class="modal-header">
-          <span>使用指南</span>
+          <span data-i18n="help.title">使用指南</span>
           <button id="closeHelp" class="icon-btn">✕</button>
         </div>
         <div class="modal-body help-body">
           <ol>
-            <li>上传图片后会显示预览。</li>
-            <li>选择处理模式：添加水印 / 去除 Gemini 水印。</li>
-            <li>需要去除后再添加时，勾选「Remove → Add」。</li>
-            <li>文本或 Logo 水印可拖拽调整位置（单个水印模式）。</li>
-            <li>点击「导出设置」配置格式、尺寸与命名。</li>
-            <li>选择导出方式后点击「开始导出」。</li>
+            <li data-i18n="help.step1">上传图片后会显示预览。</li>
+            <li data-i18n="help.step2">选择处理模式：添加水印 / 去除 Gemini 水印。</li>
+            <li data-i18n="help.step3">需要去除后再添加时，勾选「Remove → Add」。</li>
+            <li data-i18n="help.step4">文本或 Logo 水印可拖拽调整位置（单个水印模式）。</li>
+            <li data-i18n="help.step5">点击「导出设置」配置格式、尺寸与命名。</li>
+            <li data-i18n="help.step6">选择导出方式后点击「开始导出」。</li>
           </ol>
-          <div class="muted">提示：Chrome/Edge 可选择保存文件夹，其他浏览器会触发多次下载。</div>
-          <div class="muted">提示：去除仅对 Gemini 可见水印有效，不影响 SynthID。</div>
+          <div class="muted" data-i18n="help.tip1">提示：Chrome/Edge 可选择保存文件夹，其他浏览器会触发多次下载。</div>
+          <div class="muted" data-i18n="help.tip2">提示：去除仅对 Gemini 可见水印有效，不影响 SynthID。</div>
         </div>
       </div>
     </div>
@@ -242,83 +246,83 @@
       <div id="settingsModal" class="modal">
         <div class="modal-card">
           <div class="modal-header">
-            <span>导出设置</span>
+            <span data-i18n="modal.exportSettings">导出设置</span>
             <button id="closeSettings" class="icon-btn">✕</button>
           </div>
           <div class="modal-body">
             <div class="form-row">
-              <label for="exportMethod">导出方式</label>
+              <label for="exportMethod" data-i18n="label.exportMethod">导出方式</label>
               <select id="exportMethod">
-                <option value="folder">保存到文件夹（推荐）</option>
-                <option value="individual">逐张下载</option>
-                <option value="zip">打包 ZIP</option>
+                <option value="folder" data-i18n="option.export.folder">保存到文件夹（推荐）</option>
+                <option value="individual" data-i18n="option.export.individual">逐张下载</option>
+                <option value="zip" data-i18n="option.export.zip">打包 ZIP</option>
               </select>
             </div>
             <div id="exportMethodTip" class="muted export-tip"></div>
             <div class="form-row">
-              <label for="format">文件格式</label>
+              <label for="format" data-i18n="label.fileFormat">文件格式</label>
               <select id="format">
-                <option value="auto">原图格式</option>
+                <option value="auto" data-i18n="option.format.auto">原图格式</option>
                 <option value="png">PNG</option>
                 <option value="jpg">JPG</option>
               </select>
             </div>
             <div class="form-row">
-              <label for="quality">JPG 质量</label>
+              <label for="quality" data-i18n="label.jpgQuality">JPG 质量</label>
               <input id="quality" type="range" min="0.5" max="1" step="0.01" value="0.92" />
               <span id="qualityValue" class="value">0.92</span>
             </div>
 
             <div class="form-row">
-              <label for="resizeMode">缩放方式</label>
+              <label for="resizeMode" data-i18n="label.resizeMode">缩放方式</label>
               <select id="resizeMode">
-                <option value="none">不缩放</option>
-                <option value="width">指定宽度</option>
-                <option value="height">指定高度</option>
-                <option value="max">限制最长边</option>
+                <option value="none" data-i18n="option.resize.none">不缩放</option>
+                <option value="width" data-i18n="option.resize.width">指定宽度</option>
+                <option value="height" data-i18n="option.resize.height">指定高度</option>
+                <option value="max" data-i18n="option.resize.max">限制最长边</option>
               </select>
             </div>
             <div class="form-row">
-              <label for="resizeValue">缩放数值</label>
+              <label for="resizeValue" data-i18n="label.resizeValue">缩放数值</label>
               <input id="resizeValue" type="number" min="64" max="10000" value="1024" />
             </div>
 
             <div class="form-row">
-              <label>重命名</label>
+              <label data-i18n="label.rename">重命名</label>
               <select id="renameMode">
-                <option value="keep">保留原文件名</option>
-                <option value="prefix">添加前缀</option>
-                <option value="suffix">添加后缀</option>
-                <option value="sequence">按序号重命名</option>
+                <option value="keep" data-i18n="option.rename.keep">保留原文件名</option>
+                <option value="prefix" data-i18n="option.rename.prefix">添加前缀</option>
+                <option value="suffix" data-i18n="option.rename.suffix">添加后缀</option>
+                <option value="sequence" data-i18n="option.rename.sequence">按序号重命名</option>
               </select>
             </div>
             <div class="form-row">
-              <label for="renamePrefix">前缀</label>
+              <label for="renamePrefix" data-i18n="label.renamePrefix">前缀</label>
               <input id="renamePrefix" type="text" placeholder="wm_" />
             </div>
             <div class="form-row">
-              <label for="renameSuffix">后缀</label>
+              <label for="renameSuffix" data-i18n="label.renameSuffix">后缀</label>
               <input id="renameSuffix" type="text" placeholder="_watermarked" />
             </div>
             <div class="form-row">
-              <label for="sequenceStart">序号起始</label>
+              <label for="sequenceStart" data-i18n="label.sequenceStart">序号起始</label>
               <input id="sequenceStart" type="number" min="1" max="99999" value="1" />
             </div>
 
             <div class="form-row">
-              <label for="randomizePosition">随机位置</label>
+              <label for="randomizePosition" data-i18n="label.randomPosition">随机位置</label>
               <input id="randomizePosition" type="checkbox" />
             </div>
-            <div class="muted">随机位置只在 Single 水印模式下生效。</div>
+            <div class="muted" data-i18n="hint.randomPosition">随机位置只在 Single 水印模式下生效。</div>
 
             <div class="form-row">
-              <label for="keepMeta">保留元数据</label>
+              <label for="keepMeta" data-i18n="label.keepMeta">保留元数据</label>
               <input id="keepMeta" type="checkbox" disabled />
             </div>
-            <div class="muted">浏览器端无法保留 EXIF 元数据。</div>
+            <div class="muted" data-i18n="hint.keepMeta">浏览器端无法保留 EXIF 元数据。</div>
           </div>
         <div class="modal-actions">
-          <button id="closeSettings2" class="ghost">完成</button>
+          <button id="closeSettings2" class="ghost" data-i18n="btn.done">完成</button>
         </div>
       </div>
     </div>
