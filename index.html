@@ -242,7 +242,7 @@
       <div id="settingsModal" class="modal">
         <div class="modal-card">
           <div class="modal-header">
-            <span>Settings</span>
+            <span>导出设置</span>
             <button id="closeSettings" class="icon-btn">✕</button>
           </div>
           <div class="modal-body">
@@ -256,69 +256,69 @@
             </div>
             <div id="exportMethodTip" class="muted export-tip"></div>
             <div class="form-row">
-              <label for="format">File Format</label>
+              <label for="format">文件格式</label>
               <select id="format">
-              <option value="auto">Original</option>
-              <option value="png">PNG</option>
-              <option value="jpg">JPG</option>
-            </select>
-          </div>
-          <div class="form-row">
-            <label for="quality">JPG Quality</label>
-            <input id="quality" type="range" min="0.5" max="1" step="0.01" value="0.92" />
-            <span id="qualityValue" class="value">0.92</span>
-          </div>
+                <option value="auto">原图格式</option>
+                <option value="png">PNG</option>
+                <option value="jpg">JPG</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label for="quality">JPG 质量</label>
+              <input id="quality" type="range" min="0.5" max="1" step="0.01" value="0.92" />
+              <span id="qualityValue" class="value">0.92</span>
+            </div>
 
-          <div class="form-row">
-            <label for="resizeMode">Resize</label>
-            <select id="resizeMode">
-              <option value="none">Do not resize</option>
-              <option value="width">Set width</option>
-              <option value="height">Set height</option>
-              <option value="max">Max side</option>
-            </select>
-          </div>
-          <div class="form-row">
-            <label for="resizeValue">Resize Value</label>
-            <input id="resizeValue" type="number" min="64" max="10000" value="1024" />
-          </div>
+            <div class="form-row">
+              <label for="resizeMode">缩放方式</label>
+              <select id="resizeMode">
+                <option value="none">不缩放</option>
+                <option value="width">指定宽度</option>
+                <option value="height">指定高度</option>
+                <option value="max">限制最长边</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label for="resizeValue">缩放数值</label>
+              <input id="resizeValue" type="number" min="64" max="10000" value="1024" />
+            </div>
 
-          <div class="form-row">
-            <label>Rename</label>
-            <select id="renameMode">
-              <option value="keep">Keep original filename</option>
-              <option value="prefix">Add prefix</option>
-              <option value="suffix">Add suffix</option>
-              <option value="sequence">Rename as sequence</option>
-            </select>
-          </div>
-          <div class="form-row">
-            <label for="renamePrefix">Prefix</label>
-            <input id="renamePrefix" type="text" placeholder="wm_" />
-          </div>
-          <div class="form-row">
-            <label for="renameSuffix">Suffix</label>
-            <input id="renameSuffix" type="text" placeholder="_watermarked" />
-          </div>
-          <div class="form-row">
-            <label for="sequenceStart">Sequence Start</label>
-            <input id="sequenceStart" type="number" min="1" max="99999" value="1" />
-          </div>
+            <div class="form-row">
+              <label>重命名</label>
+              <select id="renameMode">
+                <option value="keep">保留原文件名</option>
+                <option value="prefix">添加前缀</option>
+                <option value="suffix">添加后缀</option>
+                <option value="sequence">按序号重命名</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label for="renamePrefix">前缀</label>
+              <input id="renamePrefix" type="text" placeholder="wm_" />
+            </div>
+            <div class="form-row">
+              <label for="renameSuffix">后缀</label>
+              <input id="renameSuffix" type="text" placeholder="_watermarked" />
+            </div>
+            <div class="form-row">
+              <label for="sequenceStart">序号起始</label>
+              <input id="sequenceStart" type="number" min="1" max="99999" value="1" />
+            </div>
 
-          <div class="form-row">
-            <label for="randomizePosition">Random Position</label>
-            <input id="randomizePosition" type="checkbox" />
-          </div>
-          <div class="muted">随机位置只在 Single 水印模式下生效。</div>
+            <div class="form-row">
+              <label for="randomizePosition">随机位置</label>
+              <input id="randomizePosition" type="checkbox" />
+            </div>
+            <div class="muted">随机位置只在 Single 水印模式下生效。</div>
 
-          <div class="form-row">
-            <label for="keepMeta">Keep metadata</label>
-            <input id="keepMeta" type="checkbox" disabled />
+            <div class="form-row">
+              <label for="keepMeta">保留元数据</label>
+              <input id="keepMeta" type="checkbox" disabled />
+            </div>
+            <div class="muted">浏览器端无法保留 EXIF 元数据。</div>
           </div>
-          <div class="muted">浏览器端无法保留 EXIF 元数据。</div>
-        </div>
         <div class="modal-actions">
-          <button id="closeSettings2" class="ghost">Done</button>
+          <button id="closeSettings2" class="ghost">完成</button>
         </div>
       </div>
     </div>
