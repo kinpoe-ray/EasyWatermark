@@ -25,6 +25,7 @@
         </div>
         <div class="topbar-right">
           <button id="moreBtn" class="icon-btn" type="button" aria-label="更多" data-i18n-aria="aria.more">⋯</button>
+          <span class="more-label" data-i18n="label.more">更多</span>
         </div>
       </header>
 
@@ -69,7 +70,11 @@
                   <span class="switch-text" data-i18n="label.livePreviewOn">开启</span>
                 </label>
               </div>
-              <img id="livePreview" alt="Live preview" />
+              <button id="livePreviewBtn" type="button" class="live-preview-card">
+                <img id="livePreview" alt="Live preview" />
+                <span class="live-preview-tip" data-i18n="label.tapToPreview">点击查看大图</span>
+                <span class="live-preview-icon">⤢</span>
+              </button>
             </div>
             <div class="form-row">
               <label for="processMode" data-i18n="label.processMode">处理模式</label>
@@ -139,11 +144,17 @@
               </div>
 
               <div class="advanced-toggle">
-                <button id="moreSettingsBtn" type="button" class="ghost" data-i18n="btn.commonSettings">常用设置</button>
+                <button id="moreSettingsBtn" type="button" class="ghost" data-i18n="btn.commonSettings">
+                  <span data-i18n="btn.commonSettings">常用设置</span>
+                  <span class="toggle-state" id="commonState" data-i18n="state.collapsed">已收起</span>
+                </button>
               </div>
 
               <div class="advanced-toggle">
-                <button id="advancedToggle" type="button" class="ghost" data-i18n="btn.advancedParams">高级参数</button>
+                <button id="advancedToggle" type="button" class="ghost" data-i18n="btn.advancedParams">
+                  <span data-i18n="btn.advancedParams">高级参数</span>
+                  <span class="toggle-state" id="advancedState" data-i18n="state.collapsed">已收起</span>
+                </button>
               </div>
 
               <div id="advancedControls" class="advanced-controls">

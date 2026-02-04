@@ -98,6 +98,8 @@ const i18n = {
     "label.livePreview": "实时预览",
     "label.livePreviewOn": "开启",
     "label.livePreviewOff": "关闭",
+    "label.tapToPreview": "点击查看大图",
+    "label.more": "更多",
     "label.exportMethod": "导出方式",
     "label.fileFormat": "文件格式",
     "label.jpgQuality": "JPG 质量",
@@ -150,6 +152,8 @@ const i18n = {
     "menu.templates": "模板",
     "menu.exportSettings": "导出设置",
     "label.language": "语言",
+    "state.expanded": "已展开",
+    "state.collapsed": "已收起",
     "aria.prev": "上一张",
     "aria.next": "下一张",
     "aria.zoomOut": "缩小",
@@ -224,6 +228,8 @@ const i18n = {
     "label.livePreview": "Live preview",
     "label.livePreviewOn": "On",
     "label.livePreviewOff": "Off",
+    "label.tapToPreview": "Tap to view",
+    "label.more": "More",
     "label.exportMethod": "Export method",
     "label.fileFormat": "File format",
     "label.jpgQuality": "JPG quality",
@@ -276,6 +282,8 @@ const i18n = {
     "menu.templates": "Templates",
     "menu.exportSettings": "Export settings",
     "label.language": "Language",
+    "state.expanded": "Expanded",
+    "state.collapsed": "Collapsed",
     "aria.prev": "Previous",
     "aria.next": "Next",
     "aria.zoomOut": "Zoom out",
@@ -340,6 +348,7 @@ function applyI18n() {
   });
   setI18n(t);
   syncLivePreviewToggle();
+  syncCommonAdvancedStates();
 }
 
 function setLanguage(lang) {
@@ -424,6 +433,9 @@ function syncAdvancedVisibility() {
   if (!elements.advancedControls) return;
   const shouldOpen = state.mode === "tile" || state.type === "logo";
   elements.advancedControls.classList.toggle("is-open", shouldOpen);
+  if (elements.advancedState) {
+    elements.advancedState.textContent = t(shouldOpen ? "state.expanded" : "state.collapsed");
+  }
 }
 
 function syncHint() {
@@ -448,6 +460,17 @@ function syncProcessModeButtons() {
     btn.classList.toggle("is-active", btn.dataset.mode === state.processMode);
     btn.setAttribute("aria-pressed", btn.dataset.mode === state.processMode ? "true" : "false");
   });
+}
+
+function syncCommonAdvancedStates() {
+  if (elements.commonState && elements.watermarkControls) {
+    const isOpen = elements.watermarkControls.classList.contains("show-advanced");
+    elements.commonState.textContent = t(isOpen ? "state.expanded" : "state.collapsed");
+  }
+  if (elements.advancedState && elements.advancedControls) {
+    const isOpen = elements.advancedControls.classList.contains("is-open");
+    elements.advancedState.textContent = t(isOpen ? "state.expanded" : "state.collapsed");
+  }
 }
 
 function isMobileViewport() {
@@ -482,10 +505,6 @@ function scrollToSection(sectionKey) {
 
 function syncMobileSections() {
   if (!isMobileViewport()) return;
-  const hasTemplates = getRecentTemplateIds().length > 0 || getSavedTemplates().length > 0;
-  if (hasTemplates) {
-    setSectionCollapsed("templates", false);
-  }
   if (runtime.files.length > 0) {
     setSectionCollapsed("export", false);
   }
@@ -830,8 +849,8 @@ function setupEvents() {
       setLanguage(event.target.value);
     });
   }
-  if (elements.livePreview) {
-    elements.livePreview.addEventListener("click", () => {
+  if (elements.livePreviewBtn) {
+    elements.livePreviewBtn.addEventListener("click", () => {
       scrollPreviewIntoView();
     });
   }
@@ -854,11 +873,19 @@ function setupEvents() {
 
   elements.advancedToggle.addEventListener("click", () => {
     elements.advancedControls.classList.toggle("is-open");
+    if (elements.advancedState) {
+      const isOpen = elements.advancedControls.classList.contains("is-open");
+      elements.advancedState.textContent = t(isOpen ? "state.expanded" : "state.collapsed");
+    }
   });
 
   if (elements.moreSettingsBtn) {
     elements.moreSettingsBtn.addEventListener("click", () => {
       elements.watermarkControls.classList.toggle("show-advanced");
+      if (elements.commonState) {
+        const isOpen = elements.watermarkControls.classList.contains("show-advanced");
+        elements.commonState.textContent = t(isOpen ? "state.expanded" : "state.collapsed");
+      }
     });
   }
 
@@ -1171,6 +1198,7 @@ updateRangeDisplays();
 applyStateToInputs();
 syncLayerButtons();
 syncProcessModeButtons();
+syncCommonAdvancedStates();
 setupEvents();
 setupSectionToggles();
 applyMobileCollapse();
