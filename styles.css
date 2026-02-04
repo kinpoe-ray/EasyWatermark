@@ -619,6 +619,21 @@ canvas {
   line-height: 1.6;
 }
 
+.live-preview {
+  display: none;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.live-preview img {
+  width: 100%;
+  max-height: 160px;
+  object-fit: contain;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0f1219;
+}
+
 .mode-toggle {
   display: none;
   gap: 8px;
@@ -695,6 +710,10 @@ canvas {
 
   .mode-toggle {
     display: flex;
+  }
+
+  .live-preview {
+    display: grid;
   }
 
   #processMode {

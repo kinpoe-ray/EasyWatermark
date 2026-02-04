@@ -47,6 +47,7 @@ export const elements = {
   moreTemplatesBtn: document.getElementById("moreTemplatesBtn"),
   moreExportSettingsBtn: document.getElementById("moreExportSettingsBtn"),
   moreLangSelect: document.getElementById("moreLangSelect"),
+  livePreview: document.getElementById("livePreview"),
   watermarkControls: document.getElementById("watermarkControls"),
   advancedToggle: document.getElementById("advancedToggle"),
   advancedControls: document.getElementById("advancedControls"),

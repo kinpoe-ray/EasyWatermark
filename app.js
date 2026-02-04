@@ -92,6 +92,7 @@ const i18n = {
     "label.density": "密度",
     "label.tileGap": "平铺间距",
     "label.preview": "预览",
+    "label.livePreview": "实时预览",
     "label.exportMethod": "导出方式",
     "label.fileFormat": "文件格式",
     "label.jpgQuality": "JPG 质量",
@@ -214,6 +215,7 @@ const i18n = {
     "label.density": "Density",
     "label.tileGap": "Tile gap",
     "label.preview": "Preview",
+    "label.livePreview": "Live preview",
     "label.exportMethod": "Export method",
     "label.fileFormat": "File format",
     "label.jpgQuality": "JPG quality",
@@ -499,6 +501,7 @@ async function renderPreview() {
   elements.previewCanvas.height = canvas.height;
   const ctx = elements.previewCanvas.getContext("2d");
   ctx.drawImage(canvas, 0, 0);
+  updateLivePreview(canvas);
   runtime.zoom.scale = 1;
   applyZoom();
   syncLayerButtons();
@@ -535,6 +538,23 @@ function resetProgress() {
   setProgress(0, "");
   if (elements.exportReport) elements.exportReport.textContent = "";
   if (elements.exportThumb) elements.exportThumb.removeAttribute("src");
+  updateLivePreview(null);
+}
+
+function updateLivePreview(canvas) {
+  if (!elements.livePreview) return;
+  if (!canvas) {
+    elements.livePreview.removeAttribute("src");
+    return;
+  }
+  const maxSize = 240;
+  const scale = Math.min(1, maxSize / Math.max(canvas.width, canvas.height));
+  const thumbCanvas = document.createElement("canvas");
+  thumbCanvas.width = Math.max(1, Math.round(canvas.width * scale));
+  thumbCanvas.height = Math.max(1, Math.round(canvas.height * scale));
+  const ctx = thumbCanvas.getContext("2d");
+  ctx.drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
+  elements.livePreview.src = thumbCanvas.toDataURL("image/jpeg", 0.8);
 }
 
 function updateExportThumb(canvas) {
@@ -883,6 +903,7 @@ function setupEvents() {
       updateFileSummary();
       setPrimaryButtonsEnabled(false);
       updateDragHintVisibility();
+      updateLivePreview(null);
       return;
     }
 
