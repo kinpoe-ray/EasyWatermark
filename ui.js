@@ -48,6 +48,7 @@ export const elements = {
   moreExportSettingsBtn: document.getElementById("moreExportSettingsBtn"),
   moreLangSelect: document.getElementById("moreLangSelect"),
   livePreview: document.getElementById("livePreview"),
+  livePreviewToggle: document.getElementById("livePreviewToggle"),
   watermarkControls: document.getElementById("watermarkControls"),
   advancedToggle: document.getElementById("advancedToggle"),
   advancedControls: document.getElementById("advancedControls"),

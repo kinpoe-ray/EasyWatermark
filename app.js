@@ -55,7 +55,9 @@ let swipeStartY = 0;
 let swipeStartTime = 0;
 const DRAG_HINT_KEY = "easy-watermark-drag-hint-dismissed";
 const LANG_KEY = "easy-watermark-lang";
+const LIVE_PREVIEW_KEY = "easy-watermark-live-preview";
 let currentLang = "zh";
+let livePreviewEnabled = true;
 
 const i18n = {
   zh: {
@@ -93,6 +95,8 @@ const i18n = {
     "label.tileGap": "平铺间距",
     "label.preview": "预览",
     "label.livePreview": "实时预览",
+    "label.livePreviewOn": "开启",
+    "label.livePreviewOff": "关闭",
     "label.exportMethod": "导出方式",
     "label.fileFormat": "文件格式",
     "label.jpgQuality": "JPG 质量",
@@ -216,6 +220,8 @@ const i18n = {
     "label.tileGap": "Tile gap",
     "label.preview": "Preview",
     "label.livePreview": "Live preview",
+    "label.livePreviewOn": "On",
+    "label.livePreviewOff": "Off",
     "label.exportMethod": "Export method",
     "label.fileFormat": "File format",
     "label.jpgQuality": "JPG quality",
@@ -331,6 +337,7 @@ function applyI18n() {
     if (dict[key]) el.setAttribute("aria-label", dict[key]);
   });
   setI18n(t);
+  syncLivePreviewToggle();
 }
 
 function setLanguage(lang) {
@@ -543,6 +550,10 @@ function resetProgress() {
 
 function updateLivePreview(canvas) {
   if (!elements.livePreview) return;
+  if (!livePreviewEnabled) {
+    elements.livePreview.removeAttribute("src");
+    return;
+  }
   if (!canvas) {
     elements.livePreview.removeAttribute("src");
     return;
@@ -555,6 +566,17 @@ function updateLivePreview(canvas) {
   const ctx = thumbCanvas.getContext("2d");
   ctx.drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
   elements.livePreview.src = thumbCanvas.toDataURL("image/jpeg", 0.8);
+}
+
+function syncLivePreviewToggle() {
+  if (!elements.livePreviewToggle || !elements.livePreview) return;
+  elements.livePreviewToggle.checked = livePreviewEnabled;
+  const text = livePreviewEnabled ? t("label.livePreviewOn") : t("label.livePreviewOff");
+  const textEl = elements.livePreviewToggle.closest(".switch")?.querySelector(".switch-text");
+  if (textEl) textEl.textContent = text;
+  if (!livePreviewEnabled) {
+    elements.livePreview.removeAttribute("src");
+  }
 }
 
 function updateExportThumb(canvas) {
@@ -804,6 +826,21 @@ function setupEvents() {
   if (elements.moreLangSelect) {
     elements.moreLangSelect.addEventListener("change", (event) => {
       setLanguage(event.target.value);
+    });
+  }
+  if (elements.livePreview) {
+    elements.livePreview.addEventListener("click", () => {
+      scrollPreviewIntoView();
+    });
+  }
+  if (elements.livePreviewToggle) {
+    elements.livePreviewToggle.addEventListener("change", () => {
+      livePreviewEnabled = elements.livePreviewToggle.checked;
+      localStorage.setItem(LIVE_PREVIEW_KEY, livePreviewEnabled ? "1" : "0");
+      syncLivePreviewToggle();
+      if (livePreviewEnabled) {
+        renderPreview();
+      }
     });
   }
 
@@ -1139,6 +1176,8 @@ syncMobileSections();
 updateDragHintVisibility();
 const storedLang = localStorage.getItem(LANG_KEY);
 currentLang = storedLang || "zh";
+const storedLivePreview = localStorage.getItem(LIVE_PREVIEW_KEY);
+livePreviewEnabled = storedLivePreview !== "0";
 if (elements.langSelect) {
   elements.langSelect.value = currentLang;
   elements.langSelect.addEventListener("change", (event) => {
@@ -1151,6 +1190,7 @@ if (elements.moreLangSelect) {
 applyI18n();
 updateExportSummary();
 syncHint();
+syncLivePreviewToggle();
 window.addEventListener("resize", () => {
   applyMobileCollapse();
   syncMobileSections();

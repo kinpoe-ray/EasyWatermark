@@ -61,7 +61,14 @@
               <button type="button" data-mode="remove-gemini" data-i18n="option.process.removeGemini">移除 Gemini 水印</button>
             </div>
             <div class="live-preview mobile-only">
-              <div class="muted" data-i18n="label.livePreview">实时预览</div>
+              <div class="live-preview-header">
+                <div class="muted" data-i18n="label.livePreview">实时预览</div>
+                <label class="switch">
+                  <input id="livePreviewToggle" type="checkbox" checked />
+                  <span class="slider"></span>
+                  <span class="switch-text" data-i18n="label.livePreviewOn">开启</span>
+                </label>
+              </div>
               <img id="livePreview" alt="Live preview" />
             </div>
             <div class="form-row">
