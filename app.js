@@ -70,6 +70,7 @@ const i18n = {
     "btn.export": "开始导出",
     "btn.done": "完成",
     "btn.moreSettings": "更多设置",
+    "btn.more": "更多",
     "section.upload": "1. 上传图片",
     "section.templates": "2. 模板",
     "section.watermark": "3. 水印设置",
@@ -139,6 +140,10 @@ const i18n = {
     "help.tip1": "提示：Chrome/Edge 可选择保存文件夹，其他浏览器会触发多次下载。",
     "help.tip2": "提示：去除仅对 Gemini 可见水印有效，不影响 SynthID。",
     "modal.exportSettings": "导出设置",
+    "modal.more": "更多",
+    "menu.templates": "模板",
+    "menu.exportSettings": "导出设置",
+    "label.language": "语言",
     "aria.prev": "上一张",
     "aria.next": "下一张",
     "aria.zoomOut": "缩小",
@@ -147,6 +152,7 @@ const i18n = {
     "aria.help": "帮助",
     "aria.language": "语言",
     "aria.processMode": "处理模式",
+    "aria.more": "更多",
     "summary.format.auto": "原图格式",
     "summary.resize.none": "不缩放",
     "summary.resize.width": "宽度 {value}px",
@@ -186,6 +192,7 @@ const i18n = {
     "btn.export": "Export",
     "btn.done": "Done",
     "btn.moreSettings": "More settings",
+    "btn.more": "More",
     "section.upload": "1. Upload images",
     "section.templates": "2. Templates",
     "section.watermark": "3. Watermark",
@@ -255,6 +262,10 @@ const i18n = {
     "help.tip1": "Tip: Chrome/Edge can save to a folder. Other browsers trigger multiple downloads.",
     "help.tip2": "Tip: Removal only affects visible Gemini watermark, not SynthID.",
     "modal.exportSettings": "Export settings",
+    "modal.more": "More",
+    "menu.templates": "Templates",
+    "menu.exportSettings": "Export settings",
+    "label.language": "Language",
     "aria.prev": "Previous",
     "aria.next": "Next",
     "aria.zoomOut": "Zoom out",
@@ -263,6 +274,7 @@ const i18n = {
     "aria.help": "Help",
     "aria.language": "Language",
     "aria.processMode": "Mode",
+    "aria.more": "More",
     "summary.format.auto": "Original format",
     "summary.resize.none": "No resize",
     "summary.resize.width": "Width {value}px",
@@ -317,6 +329,18 @@ function applyI18n() {
     if (dict[key]) el.setAttribute("aria-label", dict[key]);
   });
   setI18n(t);
+}
+
+function setLanguage(lang) {
+  currentLang = lang === "en" ? "en" : "zh";
+  localStorage.setItem(LANG_KEY, currentLang);
+  if (elements.langSelect) elements.langSelect.value = currentLang;
+  if (elements.moreLangSelect) elements.moreLangSelect.value = currentLang;
+  applyI18n();
+  updateExportSummary();
+  syncHint();
+  updateDragHintVisibility();
+  updateFileSummary();
 }
 
 function setPrimaryButtonsEnabled(enabled) {
@@ -437,6 +461,12 @@ function setSectionCollapsed(sectionKey, collapsed) {
   const section = document.querySelector(`.section-collapsible[data-section="${sectionKey}"]`);
   if (!section) return;
   section.classList.toggle("collapsed", collapsed);
+}
+
+function scrollToSection(sectionKey) {
+  const section = document.querySelector(`.section-collapsible[data-section="${sectionKey}"]`);
+  if (!section) return;
+  section.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function syncMobileSections() {
@@ -723,6 +753,39 @@ function setupEvents() {
   elements.settingsModal.addEventListener("click", (event) => {
     if (event.target === elements.settingsModal) elements.settingsModal.classList.remove("show");
   });
+
+  if (elements.moreBtn && elements.moreModal) {
+    elements.moreBtn.addEventListener("click", () => elements.moreModal.classList.add("show"));
+  }
+  if (elements.closeMore && elements.moreModal) {
+    elements.closeMore.addEventListener("click", () => elements.moreModal.classList.remove("show"));
+  }
+  if (elements.closeMore2 && elements.moreModal) {
+    elements.closeMore2.addEventListener("click", () => elements.moreModal.classList.remove("show"));
+  }
+  if (elements.moreModal) {
+    elements.moreModal.addEventListener("click", (event) => {
+      if (event.target === elements.moreModal) elements.moreModal.classList.remove("show");
+    });
+  }
+  if (elements.moreTemplatesBtn) {
+    elements.moreTemplatesBtn.addEventListener("click", () => {
+      if (elements.moreModal) elements.moreModal.classList.remove("show");
+      setSectionCollapsed("templates", false);
+      scrollToSection("templates");
+    });
+  }
+  if (elements.moreExportSettingsBtn) {
+    elements.moreExportSettingsBtn.addEventListener("click", () => {
+      if (elements.moreModal) elements.moreModal.classList.remove("show");
+      elements.settingsModal.classList.add("show");
+    });
+  }
+  if (elements.moreLangSelect) {
+    elements.moreLangSelect.addEventListener("change", (event) => {
+      setLanguage(event.target.value);
+    });
+  }
 
   elements.helpBtn.addEventListener("click", () => elements.helpModal.classList.add("show"));
   elements.closeHelp.addEventListener("click", () => elements.helpModal.classList.remove("show"));
@@ -1058,14 +1121,11 @@ currentLang = storedLang || "zh";
 if (elements.langSelect) {
   elements.langSelect.value = currentLang;
   elements.langSelect.addEventListener("change", (event) => {
-    currentLang = event.target.value === "en" ? "en" : "zh";
-    localStorage.setItem(LANG_KEY, currentLang);
-    applyI18n();
-    updateExportSummary();
-    syncHint();
-    updateDragHintVisibility();
-    updateFileSummary();
+    setLanguage(event.target.value);
   });
+}
+if (elements.moreLangSelect) {
+  elements.moreLangSelect.value = currentLang;
 }
 applyI18n();
 updateExportSummary();

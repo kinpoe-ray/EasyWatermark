@@ -23,6 +23,9 @@
             <option value="en">English</option>
           </select>
         </div>
+        <div class="topbar-right">
+          <button id="moreBtn" class="icon-btn" type="button" aria-label="更多" data-i18n-aria="aria.more">⋯</button>
+        </div>
       </header>
 
       <main class="layout">
@@ -251,7 +254,7 @@
       </div>
     </div>
 
-      <div id="settingsModal" class="modal">
+    <div id="settingsModal" class="modal">
         <div class="modal-card">
           <div class="modal-header">
             <span data-i18n="modal.exportSettings">导出设置</span>
@@ -331,6 +334,29 @@
           </div>
         <div class="modal-actions">
           <button id="closeSettings2" class="ghost" data-i18n="btn.done">完成</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="moreModal" class="modal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <span data-i18n="modal.more">更多</span>
+          <button id="closeMore" class="icon-btn">✕</button>
+        </div>
+        <div class="modal-body">
+          <button id="moreTemplatesBtn" class="ghost" data-i18n="menu.templates">模板</button>
+          <button id="moreExportSettingsBtn" class="ghost" data-i18n="menu.exportSettings">导出设置</button>
+          <div class="form-row">
+            <label for="moreLangSelect" data-i18n="label.language">语言</label>
+            <select id="moreLangSelect" class="lang-select">
+              <option value="zh">中文</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="closeMore2" class="ghost" data-i18n="btn.done">完成</button>
         </div>
       </div>
     </div>
