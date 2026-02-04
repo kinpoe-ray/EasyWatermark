@@ -509,6 +509,11 @@ canvas {
   line-height: 1.5;
 }
 
+.modal-body .export-tip {
+  margin-top: 0;
+  margin-bottom: 4px;
+}
+
 .footer {
   text-align: center;
   color: var(--muted);

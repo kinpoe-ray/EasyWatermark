@@ -153,25 +153,16 @@
 
           <div class="section section-collapsible" data-section="export">
             <button class="section-title section-toggle" type="button">4. 导出</button>
-            <div class="actions">
-              <button id="settingsBtn" class="ghost">导出设置</button>
-              <button id="previewBtn" class="ghost">渲染预览</button>
-              <button id="downloadBtn">开始导出</button>
+          <div class="actions">
+            <button id="settingsBtn" class="ghost">导出设置</button>
+            <button id="previewBtn" class="ghost">渲染预览</button>
+            <button id="downloadBtn">开始导出</button>
+          </div>
+          <div id="exportSummary" class="muted"></div>
+          <div class="progress-wrap">
+            <div class="progress-bar">
+              <div id="progressFill" class="progress-bar-fill"></div>
             </div>
-            <div class="form-row">
-              <label for="exportMethod">导出方式</label>
-              <select id="exportMethod">
-                <option value="folder">保存到文件夹（推荐）</option>
-                <option value="individual">逐张下载</option>
-                <option value="zip">打包 ZIP</option>
-              </select>
-            </div>
-            <div id="exportMethodTip" class="muted export-tip"></div>
-            <div id="exportSummary" class="muted"></div>
-            <div class="progress-wrap">
-              <div class="progress-bar">
-                <div id="progressFill" class="progress-bar-fill"></div>
-              </div>
               <div class="progress-meta">
                 <img id="exportThumb" alt="export preview" />
                 <div>
@@ -248,16 +239,25 @@
       </div>
     </div>
 
-    <div id="settingsModal" class="modal">
-      <div class="modal-card">
-        <div class="modal-header">
-          <span>Settings</span>
-          <button id="closeSettings" class="icon-btn">✕</button>
-        </div>
-        <div class="modal-body">
-          <div class="form-row">
-            <label for="format">File Format</label>
-            <select id="format">
+      <div id="settingsModal" class="modal">
+        <div class="modal-card">
+          <div class="modal-header">
+            <span>Settings</span>
+            <button id="closeSettings" class="icon-btn">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-row">
+              <label for="exportMethod">导出方式</label>
+              <select id="exportMethod">
+                <option value="folder">保存到文件夹（推荐）</option>
+                <option value="individual">逐张下载</option>
+                <option value="zip">打包 ZIP</option>
+              </select>
+            </div>
+            <div id="exportMethodTip" class="muted export-tip"></div>
+            <div class="form-row">
+              <label for="format">File Format</label>
+              <select id="format">
               <option value="auto">Original</option>
               <option value="png">PNG</option>
               <option value="jpg">JPG</option>
