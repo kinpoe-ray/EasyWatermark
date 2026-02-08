@@ -1,0 +1,160 @@
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "panel"
+      "preview";
+  }
+
+  .topbar {
+    padding: 12px 14px;
+    padding-top: calc(12px + env(safe-area-inset-top));
+  }
+}
+
+@media (max-width: 640px) {
+  body {
+    background-attachment: scroll;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    font-size: 16px;
+  }
+
+  .layout {
+    grid-template-areas:
+      "panel"
+      "preview";
+    padding: 14px;
+    gap: 14px;
+  }
+
+  .panel,
+  .preview {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .preview {
+    min-height: 42vh;
+  }
+
+  .more-label {
+    display: inline-flex;
+  }
+
+  .desktop-help {
+    display: none;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .watermark-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .value {
+    text-align: left;
+  }
+
+  .live-preview {
+    display: grid;
+  }
+
+  .mobile-only {
+    display: flex;
+  }
+
+  .preview-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .preview-tools {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  #prevImageBtn,
+  #nextImageBtn {
+    display: none;
+  }
+
+  .preview-nav-btn {
+    display: inline-flex;
+  }
+
+  .preview-tools .icon-btn {
+    width: 100%;
+    height: 44px;
+  }
+
+  #previewIndex {
+    grid-column: 1 / -1;
+    font-size: 12px;
+  }
+
+  button {
+    min-height: 44px;
+    padding: 10px 14px;
+  }
+
+  .form-row input[type="text"],
+  .form-row input[type="number"],
+  .form-row select {
+    min-height: 44px;
+  }
+
+  .form-row input[type="range"] {
+    height: 36px;
+  }
+
+  .section-toggle {
+    min-height: 44px;
+    padding: 8px 0;
+  }
+
+  .section-toggle::after {
+    content: "▾";
+    float: right;
+    color: var(--muted);
+  }
+
+  .section-collapsible.collapsed .section-toggle::after {
+    content: "▸";
+  }
+
+  .modal {
+    padding: 12px;
+  }
+
+  .modal-card {
+    max-height: 85vh;
+    overflow: auto;
+  }
+
+  .modal-actions {
+    position: sticky;
+    bottom: 0;
+    padding: 10px 0 2px;
+    background: linear-gradient(180deg, rgba(26, 29, 36, 0), rgba(26, 29, 36, 0.85) 35%, #1a1d24 80%);
+  }
+
+  .progress-meta {
+    grid-template-columns: 1fr;
+  }
+
+  #exportThumb {
+    width: 100%;
+    height: auto;
+    max-height: 160px;
+  }
+}

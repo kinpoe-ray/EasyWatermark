@@ -29,6 +29,21 @@ export const state = {
     randomizePosition: false,
     method: "folder",
   },
+  ui: {
+    viewport: "desktop",
+    sections: {
+      upload: true,
+      templates: false,
+      watermark: true,
+      export: true,
+    },
+    modal: "none",
+    advanced: {
+      commonOpen: false,
+      exportOpen: false,
+    },
+    livePreviewEnabled: true,
+  },
 };
 
 export const runtime = {

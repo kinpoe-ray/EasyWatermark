@@ -1,0 +1,84 @@
+name: Web UI Regression
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - "index.html"
+      - "app.js"
+      - "core.js"
+      - "ui.js"
+      - "storage.js"
+      - "modules/**"
+      - "styles.css"
+      - "styles/**"
+      - "tests/agent-browser/**"
+      - "tests/fixtures/**"
+      - ".github/workflows/web-ui-regression.yml"
+  workflow_dispatch:
+  schedule:
+    - cron: "0 2 * * *"
+
+jobs:
+  ui-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install agent-browser CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install -g agent-browser || npm install -g @agent-browser/cli
+          agent-browser --version
+
+      - name: Start static web server
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8080 > /tmp/web-server.log 2>&1 &
+          echo $! > /tmp/web-server.pid
+          sleep 2
+
+      - name: Run smoke and layout suites
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./tests/agent-browser/run-all.sh "http://127.0.0.1:8080"
+
+      - name: Nightly extended pass
+        if: github.event_name == 'schedule'
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./tests/agent-browser/desktop-smoke.sh "http://127.0.0.1:8080" "tests/artifacts/nightly-desktop"
+          ./tests/agent-browser/mobile-smoke.sh "http://127.0.0.1:8080" "tests/artifacts/nightly-mobile"
+
+      - name: Stop static web server
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          if [[ -f /tmp/web-server.pid ]]; then
+            kill "$(cat /tmp/web-server.pid)" >/dev/null 2>&1 || true
+          fi
+
+      - name: Upload regression artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-ui-regression-artifacts
+          path: |
+            tests/artifacts
+            tests/baseline
+            /tmp/web-server.log
+          if-no-files-found: warn

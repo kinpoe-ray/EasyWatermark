@@ -111,3 +111,21 @@ We welcome your localization assistance in any way, including but not limited to
 ## [Privacy policy](https://github.com/rosuH/EasyWatermark/blob/master/PrivacyPolicy.md)
 
 If you really need it.
+
+## Web UI regression (agent-browser)
+
+This repo includes browser-driven UI checks for desktop and mobile layouts:
+
+```bash
+# terminal 1
+python3 -m http.server 8080
+
+# terminal 2
+./tests/agent-browser/run-all.sh http://127.0.0.1:8080
+```
+
+Scripts:
+
+- `tests/agent-browser/desktop-smoke.sh`
+- `tests/agent-browser/mobile-smoke.sh`
+- `tests/agent-browser/layout-assert.sh`

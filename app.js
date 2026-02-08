@@ -27,16 +27,47 @@ import {
   syncStateFromInputs,
   updateExportSummary,
   setActiveTileStyle,
-  bindLayerButton,
   syncLayerButtons,
   setLayerButtonsEnabled,
   setWatermarkControlsEnabled,
+  setEmptyStateVisible,
   applyMobileCollapse,
   setupSectionToggles,
   setupZoom,
   applyZoom,
   setI18n,
 } from "./ui.js";
+import {
+  createI18n,
+} from "./modules/i18n.js";
+import {
+  createUIState,
+  syncViewport,
+  setModal,
+  setSectionOpen,
+  setAdvancedOpen,
+} from "./modules/ui-state.js";
+import {
+  setupActionRouter,
+} from "./modules/events.js";
+import {
+  getAllTemplates,
+  renderTemplateSelect as renderTemplateSelectUI,
+  renderRecentTemplates as renderRecentTemplatesUI,
+  createTemplateSnapshot,
+  updateTemplateActions as updateTemplateActionsUI,
+  applyTemplateById as applyTemplateByIdUI,
+} from "./modules/template-ui.js";
+import {
+  setProgress,
+  updateFileSummary,
+  updateLivePreview,
+  syncLivePreviewToggle,
+  updateExportThumb,
+  resetProgress,
+  updateExportReport,
+  formatProgress,
+} from "./modules/export-ui.js";
 
 function getSettings() {
   return {
@@ -46,6 +77,7 @@ function getSettings() {
 }
 
 function updateHint(message) {
+  if (!elements.hint) return;
   elements.hint.textContent = message;
 }
 
@@ -53,321 +85,61 @@ let renderQueued = false;
 let swipeStartX = 0;
 let swipeStartY = 0;
 let swipeStartTime = 0;
+let swipeEligible = false;
+
 const DRAG_HINT_KEY = "easy-watermark-drag-hint-dismissed";
 const LANG_KEY = "easy-watermark-lang";
 const LIVE_PREVIEW_KEY = "easy-watermark-live-preview";
-let currentLang = "zh";
-let livePreviewEnabled = true;
 
-const i18n = {
-  zh: {
-    "btn.textWatermark": "文字水印",
-    "btn.logoWatermark": "Logo 水印",
-    "btn.clearWatermark": "清除水印",
-    "btn.delete": "删除",
-    "btn.save": "保存",
-    "btn.advanced": "高级设置",
-    "btn.exportSettings": "导出设置",
-    "btn.renderPreview": "渲染预览",
-    "btn.export": "开始导出",
-    "btn.done": "完成",
-    "btn.commonSettings": "常用设置",
-    "btn.advancedParams": "高级参数",
-    "btn.more": "更多",
-    "section.upload": "1. 上传图片",
-    "section.templates": "2. 模板",
-    "section.watermark": "3. 水印设置",
-    "section.export": "4. 导出",
-    "label.templateSelect": "模板选择",
-    "label.templateSave": "保存模板",
-    "label.recent": "最近使用",
-    "label.processMode": "处理模式",
-    "label.removeThenAdd": "去除后再添加",
-    "label.watermarkText": "水印文字",
-    "label.fontFamily": "字体",
-    "label.fontSize": "字号",
-    "label.color": "颜色",
-    "label.opacity": "透明度",
-    "label.rotation": "旋转",
-    "label.scale": "缩放",
-    "label.watermarkMode": "水印模式",
-    "label.tileDensity": "平铺密度",
-    "label.density": "密度",
-    "label.tileGap": "平铺间距",
-    "label.preview": "预览",
-    "label.livePreview": "实时预览",
-    "label.livePreviewOn": "开启",
-    "label.livePreviewOff": "关闭",
-    "label.tapToPreview": "点击查看大图",
-    "label.more": "更多",
-    "label.exportMethod": "导出方式",
-    "label.fileFormat": "文件格式",
-    "label.jpgQuality": "JPG 质量",
-    "label.resizeMode": "缩放方式",
-    "label.resizeValue": "缩放数值",
-    "label.rename": "重命名",
-    "label.renamePrefix": "前缀",
-    "label.renameSuffix": "后缀",
-    "label.sequenceStart": "序号起始",
-    "label.randomPosition": "随机位置",
-    "label.keepMeta": "保留元数据",
-    "option.process.add": "添加水印",
-    "option.process.removeGemini": "移除 Gemini 水印",
-    "option.mode.single": "单个",
-    "option.mode.tile": "平铺",
-    "option.export.folder": "保存到文件夹（推荐）",
-    "option.export.individual": "逐张下载",
-    "option.export.zip": "打包 ZIP",
-    "option.format.auto": "原图格式",
-    "option.resize.none": "不缩放",
-    "option.resize.width": "指定宽度",
-    "option.resize.height": "指定高度",
-    "option.resize.max": "限制最长边",
-    "option.rename.keep": "保留原文件名",
-    "option.rename.prefix": "添加前缀",
-    "option.rename.suffix": "添加后缀",
-    "option.rename.sequence": "按序号重命名",
-    "placeholder.templateName": "例如：证件防泄漏",
-    "placeholder.watermarkText": "水印文字",
-    "hint.geminiOnly": "仅移除可见 Gemini 水印，不影响 SynthID。",
-    "hint.drag": "拖动水印调整位置",
-    "hint.dragMobile": "拖动水印调整位置 · 双指缩放预览",
-    "hint.tile": "平铺模式无法拖动",
-    "hint.remove": "Gemini 可见水印移除（不影响 SynthID）",
-    "hint.randomPosition": "随机位置只在 Single 水印模式下生效。",
-    "hint.keepMeta": "浏览器端无法保留 EXIF 元数据。",
-    "file.none": "未选择图片",
-    "footer.note": "全部处理在本地浏览器完成，不上传图片。作者：",
-    "help.title": "使用指南",
-    "help.step1": "上传图片后会显示预览。",
-    "help.step2": "选择处理模式：添加水印 / 去除 Gemini 水印。",
-    "help.step3": "需要去除后再添加时，勾选「Remove → Add」。",
-    "help.step4": "文本或 Logo 水印可拖拽调整位置（单个水印模式）。",
-    "help.step5": "点击「导出设置」配置格式、尺寸与命名。",
-    "help.step6": "选择导出方式后点击「开始导出」。",
-    "help.tip1": "提示：Chrome/Edge 可选择保存文件夹，其他浏览器会触发多次下载。",
-    "help.tip2": "提示：去除仅对 Gemini 可见水印有效，不影响 SynthID。",
-    "modal.exportSettings": "导出设置",
-    "modal.more": "更多",
-    "menu.templates": "模板",
-    "menu.exportSettings": "导出设置",
-    "label.language": "语言",
-    "state.expanded": "已展开",
-    "state.collapsed": "已收起",
-    "aria.prev": "上一张",
-    "aria.next": "下一张",
-    "aria.zoomOut": "缩小",
-    "aria.zoomReset": "重置缩放",
-    "aria.zoomIn": "放大",
-    "aria.help": "帮助",
-    "aria.language": "语言",
-    "aria.processMode": "处理模式",
-    "aria.more": "更多",
-    "summary.format.auto": "原图格式",
-    "summary.resize.none": "不缩放",
-    "summary.resize.width": "宽度 {value}px",
-    "summary.resize.height": "高度 {value}px",
-    "summary.resize.max": "最长边 {value}px",
-    "summary.rename.keep": "保留原名",
-    "summary.rename.prefix": "前缀 {value}",
-    "summary.rename.suffix": "后缀 {value}",
-    "summary.rename.sequence": "序列起始 {value}",
-    "summary.method.folder": "保存到文件夹",
-    "summary.method.individual": "逐张下载",
-    "summary.method.zip": "ZIP",
-    "summary.template": "{format} · {resize} · {rename} · {method}",
-    "export.tip.folder": "保存到文件夹：仅桌面 Chrome/Edge 支持；iOS Safari 会自动改为「逐张下载」。",
-    "export.tip.individual": "逐张下载：会触发多次下载提示，适合少量图片。",
-    "export.tip.zip": "ZIP 打包：只下载一个文件，适合移动端与批量导出。",
-    "progress.processing": "处理中 {index}/{total} ({percent}%) · {name}",
-    "progress.start": "开始渲染...",
-    "progress.zipping": "正在打包...",
-    "progress.done": "完成",
-    "progress.canceled": "已取消",
-    "progress.failed": "失败，请查看控制台",
-    "report.zip": "完成 {count} 张图片，已打包 ZIP",
-    "report.folder": "完成 {count} 张图片，已保存到文件夹",
-    "report.individual": "完成 {count} 张图片，已逐张下载",
-    "file.summary": "{count} 张图片 ({size} MB)",
-  },
-  en: {
-    "btn.textWatermark": "Text watermark",
-    "btn.logoWatermark": "Logo watermark",
-    "btn.clearWatermark": "Clear watermark",
-    "btn.delete": "Delete",
-    "btn.save": "Save",
-    "btn.advanced": "Advanced",
-    "btn.exportSettings": "Export settings",
-    "btn.renderPreview": "Render preview",
-    "btn.export": "Export",
-    "btn.done": "Done",
-    "btn.commonSettings": "Common settings",
-    "btn.advancedParams": "Advanced settings",
-    "btn.more": "More",
-    "section.upload": "1. Upload images",
-    "section.templates": "2. Templates",
-    "section.watermark": "3. Watermark",
-    "section.export": "4. Export",
-    "label.templateSelect": "Template",
-    "label.templateSave": "Save template",
-    "label.recent": "Recent",
-    "label.processMode": "Mode",
-    "label.removeThenAdd": "Remove then add",
-    "label.watermarkText": "Text",
-    "label.fontFamily": "Font",
-    "label.fontSize": "Size",
-    "label.color": "Color",
-    "label.opacity": "Opacity",
-    "label.rotation": "Rotation",
-    "label.scale": "Scale",
-    "label.watermarkMode": "Watermark mode",
-    "label.tileDensity": "Tile density",
-    "label.density": "Density",
-    "label.tileGap": "Tile gap",
-    "label.preview": "Preview",
-    "label.livePreview": "Live preview",
-    "label.livePreviewOn": "On",
-    "label.livePreviewOff": "Off",
-    "label.tapToPreview": "Tap to view",
-    "label.more": "More",
-    "label.exportMethod": "Export method",
-    "label.fileFormat": "File format",
-    "label.jpgQuality": "JPG quality",
-    "label.resizeMode": "Resize mode",
-    "label.resizeValue": "Resize value",
-    "label.rename": "Rename",
-    "label.renamePrefix": "Prefix",
-    "label.renameSuffix": "Suffix",
-    "label.sequenceStart": "Sequence start",
-    "label.randomPosition": "Random position",
-    "label.keepMeta": "Keep metadata",
-    "option.process.add": "Add watermark",
-    "option.process.removeGemini": "Remove Gemini watermark",
-    "option.mode.single": "Single",
-    "option.mode.tile": "Tiled",
-    "option.export.folder": "Save to folder (recommended)",
-    "option.export.individual": "Download individually",
-    "option.export.zip": "ZIP archive",
-    "option.format.auto": "Original format",
-    "option.resize.none": "No resize",
-    "option.resize.width": "Set width",
-    "option.resize.height": "Set height",
-    "option.resize.max": "Max side",
-    "option.rename.keep": "Keep original filename",
-    "option.rename.prefix": "Add prefix",
-    "option.rename.suffix": "Add suffix",
-    "option.rename.sequence": "Rename as sequence",
-    "placeholder.templateName": "e.g. ID protection",
-    "placeholder.watermarkText": "Watermark text",
-    "hint.geminiOnly": "Removes visible Gemini watermark only. Does not affect SynthID.",
-    "hint.drag": "Drag to move watermark",
-    "hint.dragMobile": "Drag to move watermark · Pinch to zoom preview",
-    "hint.tile": "Tiled mode cannot be dragged",
-    "hint.remove": "Gemini visible watermark removal (does not affect SynthID)",
-    "hint.randomPosition": "Random position only applies to Single watermark mode.",
-    "hint.keepMeta": "EXIF metadata cannot be preserved in the browser.",
-    "file.none": "No images selected",
-    "footer.note": "All processing happens locally in your browser. Images are not uploaded. Author:",
-    "help.title": "Quick guide",
-    "help.step1": "Upload images to see preview.",
-    "help.step2": "Choose mode: add watermark or remove Gemini watermark.",
-    "help.step3": "Enable “Remove → Add” if you want to add after removal.",
-    "help.step4": "Drag text or logo in Single mode.",
-    "help.step5": "Use Export settings to configure format, size, and naming.",
-    "help.step6": "Select export method and tap Export.",
-    "help.tip1": "Tip: Chrome/Edge can save to a folder. Other browsers trigger multiple downloads.",
-    "help.tip2": "Tip: Removal only affects visible Gemini watermark, not SynthID.",
-    "modal.exportSettings": "Export settings",
-    "modal.more": "More",
-    "menu.templates": "Templates",
-    "menu.exportSettings": "Export settings",
-    "label.language": "Language",
-    "state.expanded": "Expanded",
-    "state.collapsed": "Collapsed",
-    "aria.prev": "Previous",
-    "aria.next": "Next",
-    "aria.zoomOut": "Zoom out",
-    "aria.zoomReset": "Reset zoom",
-    "aria.zoomIn": "Zoom in",
-    "aria.help": "Help",
-    "aria.language": "Language",
-    "aria.processMode": "Mode",
-    "aria.more": "More",
-    "summary.format.auto": "Original format",
-    "summary.resize.none": "No resize",
-    "summary.resize.width": "Width {value}px",
-    "summary.resize.height": "Height {value}px",
-    "summary.resize.max": "Max side {value}px",
-    "summary.rename.keep": "Keep original name",
-    "summary.rename.prefix": "Prefix {value}",
-    "summary.rename.suffix": "Suffix {value}",
-    "summary.rename.sequence": "Sequence start {value}",
-    "summary.method.folder": "Save to folder",
-    "summary.method.individual": "Download individually",
-    "summary.method.zip": "ZIP",
-    "summary.template": "{format} · {resize} · {rename} · {method}",
-    "export.tip.folder": "Save to folder: desktop Chrome/Edge only; iOS Safari will fall back to downloads.",
-    "export.tip.individual": "Individual downloads: triggers multiple prompts, best for small batches.",
-    "export.tip.zip": "ZIP archive: single download, best for mobile and batches.",
-    "progress.processing": "Processing {index}/{total} ({percent}%) · {name}",
-    "progress.start": "Starting...",
-    "progress.zipping": "Zipping...",
-    "progress.done": "Done",
-    "progress.canceled": "Canceled",
-    "progress.failed": "Failed, see console",
-    "report.zip": "Finished {count} images, ZIP created",
-    "report.folder": "Finished {count} images, saved to folder",
-    "report.individual": "Finished {count} images, downloaded individually",
-    "file.summary": "{count} images ({size} MB)",
-  },
-};
+const i18n = createI18n({ initialLang: localStorage.getItem(LANG_KEY) || "zh" });
+const uiState = createUIState({
+  livePreviewEnabled: localStorage.getItem(LIVE_PREVIEW_KEY) !== "0",
+});
+Object.assign(state.ui, uiState);
+
+function syncUiStateToCore() {
+  state.ui.viewport = uiState.viewport;
+  state.ui.modal = uiState.modal;
+  state.ui.livePreviewEnabled = uiState.livePreviewEnabled;
+  state.ui.sections = { ...uiState.sections };
+  state.ui.advanced = { ...uiState.advanced };
+}
 
 function t(key, vars = {}) {
-  const dict = i18n[currentLang] || i18n.zh;
-  let text = dict[key] || i18n.zh[key] || key;
-  Object.entries(vars).forEach(([name, value]) => {
-    text = text.replaceAll(`{${name}}`, value);
-  });
-  return text;
+  return i18n.t(key, vars);
 }
 
 function applyI18n() {
-  const dict = i18n[currentLang] || i18n.zh;
-  document.documentElement.lang = currentLang === "en" ? "en" : "zh-CN";
-  document.querySelectorAll("[data-i18n]").forEach((el) => {
-    const key = el.dataset.i18n;
-    if (dict[key]) el.textContent = dict[key];
-  });
-  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
-    const key = el.dataset.i18nPlaceholder;
-    if (dict[key]) el.setAttribute("placeholder", dict[key]);
-  });
-  document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
-    const key = el.dataset.i18nAria;
-    if (dict[key]) el.setAttribute("aria-label", dict[key]);
-  });
+  i18n.applyToDom(document);
   setI18n(t);
-  syncLivePreviewToggle();
+  syncLivePreviewToggle(elements, uiState.livePreviewEnabled, t);
   syncCommonAdvancedStates();
+  syncExportAdvancedState();
 }
 
 function setLanguage(lang) {
-  currentLang = lang === "en" ? "en" : "zh";
+  const currentLang = i18n.setLanguage(lang, document);
   localStorage.setItem(LANG_KEY, currentLang);
   if (elements.langSelect) elements.langSelect.value = currentLang;
   if (elements.moreLangSelect) elements.moreLangSelect.value = currentLang;
-  applyI18n();
+  setI18n(t);
+  syncLivePreviewToggle(elements, uiState.livePreviewEnabled, t);
+  syncCommonAdvancedStates();
+  syncExportAdvancedState();
   updateExportSummary();
   syncHint();
   updateDragHintVisibility();
-  updateFileSummary();
+  updateFileSummary(elements, runtime.files, t);
+  renderTemplateSelect();
+}
+
+function updateLivePreviewImage(canvas) {
+  updateLivePreview(elements, canvas, uiState.livePreviewEnabled);
 }
 
 function setPrimaryButtonsEnabled(enabled) {
   elements.previewBtn.disabled = !enabled;
   elements.downloadBtn.disabled = !enabled;
-  if (elements.previewBtnMobile) elements.previewBtnMobile.disabled = !enabled;
-  if (elements.downloadBtnMobile) elements.downloadBtnMobile.disabled = !enabled;
 }
 
 function adjustZoom(delta) {
@@ -420,6 +192,10 @@ function scheduleRenderPreview() {
   });
 }
 
+function isMobileViewport() {
+  return window.matchMedia("(max-width: 640px)").matches;
+}
+
 function updateControlAvailability() {
   const removeOnly = state.processMode === "remove-gemini" && !state.removeThenAdd;
   setWatermarkControlsEnabled(!removeOnly);
@@ -449,16 +225,16 @@ function syncHint() {
     updateDragHintVisibility();
     return;
   }
-  const isMobile = window.matchMedia("(max-width: 640px)").matches;
-  updateHint(isMobile ? t("hint.dragMobile") : t("hint.drag"));
+  updateHint(isMobileViewport() ? t("hint.dragMobile") : t("hint.drag"));
   updateDragHintVisibility();
 }
 
 function syncProcessModeButtons() {
   if (!elements.modeToggleButtons || !elements.modeToggleButtons.length) return;
   elements.modeToggleButtons.forEach((btn) => {
-    btn.classList.toggle("is-active", btn.dataset.mode === state.processMode);
-    btn.setAttribute("aria-pressed", btn.dataset.mode === state.processMode ? "true" : "false");
+    const active = btn.dataset.mode === state.processMode;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-pressed", active ? "true" : "false");
   });
 }
 
@@ -473,8 +249,11 @@ function syncCommonAdvancedStates() {
   }
 }
 
-function isMobileViewport() {
-  return window.matchMedia("(max-width: 640px)").matches;
+function syncExportAdvancedState() {
+  if (!elements.exportAdvancedGroup || !elements.exportAdvancedState) return;
+  const open = uiState.advanced.exportOpen;
+  elements.exportAdvancedGroup.classList.toggle("is-open", open);
+  elements.exportAdvancedState.textContent = t(open ? "state.expanded" : "state.collapsed");
 }
 
 function updateDragHintVisibility() {
@@ -495,6 +274,8 @@ function setSectionCollapsed(sectionKey, collapsed) {
   const section = document.querySelector(`.section-collapsible[data-section="${sectionKey}"]`);
   if (!section) return;
   section.classList.toggle("collapsed", collapsed);
+  setSectionOpen(uiState, sectionKey, !collapsed);
+  syncUiStateToCore();
 }
 
 function scrollToSection(sectionKey) {
@@ -517,19 +298,42 @@ function scrollPreviewIntoView() {
   preview.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function openModal(name) {
+  setModal(uiState, name);
+  syncUiStateToCore();
+  if (name === "settings" && elements.settingsModal) elements.settingsModal.classList.add("show");
+  if (name === "more" && elements.moreModal) elements.moreModal.classList.add("show");
+  if (name === "help" && elements.helpModal) elements.helpModal.classList.add("show");
+}
+
+function closeModal(name) {
+  if (name === "settings" && elements.settingsModal) elements.settingsModal.classList.remove("show");
+  if (name === "more" && elements.moreModal) elements.moreModal.classList.remove("show");
+  if (name === "help" && elements.helpModal) elements.helpModal.classList.remove("show");
+  if (uiState.modal === name) setModal(uiState, "none");
+  syncUiStateToCore();
+}
+
 async function renderPreview() {
-  if (runtime.files.length === 0) return;
   syncStateFromInputs();
+  setEmptyStateVisible(runtime.files.length === 0);
+  if (runtime.files.length === 0) {
+    updatePreviewNav();
+    return;
+  }
+
   updateControlAvailability();
   syncAdvancedVisibility();
   const token = (runtime.renderToken += 1);
   const canvas = await renderImageWithWatermark(runtime.files[runtime.activeImageIndex], getSettings(), true);
   if (token !== runtime.renderToken) return;
+
   elements.previewCanvas.width = canvas.width;
   elements.previewCanvas.height = canvas.height;
   const ctx = elements.previewCanvas.getContext("2d");
   ctx.drawImage(canvas, 0, 0);
-  updateLivePreview(canvas);
+  updateLivePreviewImage(canvas);
+
   runtime.zoom.scale = 1;
   applyZoom();
   syncLayerButtons();
@@ -539,90 +343,17 @@ async function renderPreview() {
   updatePreviewNav();
 }
 
-function formatProgress(index, total, name) {
-  const percent = Math.round((index / total) * 100);
-  return t("progress.processing", { index, total, percent, name: name || "" }).trim();
-}
-
-function setProgress(percent, text) {
-  if (elements.progressFill) {
-    elements.progressFill.style.width = `${percent}%`;
-  }
-  elements.progress.textContent = text || "";
-}
-
-function updateFileSummary() {
-  if (!elements.fileSummary) return;
-  if (!runtime.files.length) {
-    elements.fileSummary.textContent = t("file.none");
-    return;
-  }
-  const totalSize = runtime.files.reduce((sum, file) => sum + file.size, 0);
-  const sizeMb = (totalSize / (1024 * 1024)).toFixed(2);
-  elements.fileSummary.textContent = t("file.summary", { count: runtime.files.length, size: sizeMb });
-}
-
-function resetProgress() {
-  setProgress(0, "");
-  if (elements.exportReport) elements.exportReport.textContent = "";
-  if (elements.exportThumb) elements.exportThumb.removeAttribute("src");
-  updateLivePreview(null);
-}
-
-function updateLivePreview(canvas) {
-  if (!elements.livePreview) return;
-  if (!livePreviewEnabled) {
-    elements.livePreview.removeAttribute("src");
-    return;
-  }
-  if (!canvas) {
-    elements.livePreview.removeAttribute("src");
-    return;
-  }
-  const maxSize = 240;
-  const scale = Math.min(1, maxSize / Math.max(canvas.width, canvas.height));
-  const thumbCanvas = document.createElement("canvas");
-  thumbCanvas.width = Math.max(1, Math.round(canvas.width * scale));
-  thumbCanvas.height = Math.max(1, Math.round(canvas.height * scale));
-  const ctx = thumbCanvas.getContext("2d");
-  ctx.drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
-  elements.livePreview.src = thumbCanvas.toDataURL("image/jpeg", 0.8);
-}
-
-function syncLivePreviewToggle() {
-  if (!elements.livePreviewToggle || !elements.livePreview) return;
-  elements.livePreviewToggle.checked = livePreviewEnabled;
-  const text = livePreviewEnabled ? t("label.livePreviewOn") : t("label.livePreviewOff");
-  const textEl = elements.livePreviewToggle.closest(".switch")?.querySelector(".switch-text");
-  if (textEl) textEl.textContent = text;
-  if (!livePreviewEnabled) {
-    elements.livePreview.removeAttribute("src");
-  }
-}
-
-function updateExportThumb(canvas) {
-  if (!elements.exportThumb) return;
-  const maxSize = 160;
-  const scale = Math.min(1, maxSize / Math.max(canvas.width, canvas.height));
-  const thumbCanvas = document.createElement("canvas");
-  thumbCanvas.width = Math.max(1, Math.round(canvas.width * scale));
-  thumbCanvas.height = Math.max(1, Math.round(canvas.height * scale));
-  const ctx = thumbCanvas.getContext("2d");
-  ctx.drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
-  elements.exportThumb.src = thumbCanvas.toDataURL("image/jpeg", 0.72);
-}
-
 async function buildOutputs(onEach) {
   const originalPosition = { ...state.position };
   let index = 0;
   for (const file of runtime.files) {
     index += 1;
-    setProgress(Math.round((index / runtime.files.length) * 100), formatProgress(index, runtime.files.length, file.name));
+    setProgress(elements, Math.round((index / runtime.files.length) * 100), formatProgress(t, index, runtime.files.length, file.name));
     if (state.export.randomizePosition && state.mode === "single") {
       state.position = getRandomPosition(file.name);
     }
     const canvas = await renderImageWithWatermark(file, getSettings());
-    updateExportThumb(canvas);
+    updateExportThumb(elements, canvas);
     const { type, quality, ext } = resolveOutputFormat(file);
     const blob = await canvasToBlob(canvas, type, quality);
     const fileName = getOutputName(file, index - 1, ext);
@@ -650,107 +381,106 @@ async function downloadImagesIndividually() {
   });
 }
 
-function getAllTemplates() {
-  return [...BUILTIN_TEMPLATES, ...getSavedTemplates()];
-}
-
-function findTemplateById(id) {
-  return getAllTemplates().find((tpl) => tpl.id === id);
-}
-
 function renderTemplateSelect(selectedId) {
-  if (!elements.templateSelect) return;
-  const templates = getAllTemplates();
-  elements.templateSelect.innerHTML = "";
-
-  const builtinGroup = document.createElement("optgroup");
-  builtinGroup.label = "内置模板";
-  BUILTIN_TEMPLATES.forEach((tpl) => {
-    const option = document.createElement("option");
-    option.value = tpl.id;
-    option.textContent = tpl.name;
-    builtinGroup.appendChild(option);
+  renderTemplateSelectUI({
+    selectEl: elements.templateSelect,
+    builtinTemplates: BUILTIN_TEMPLATES,
+    savedTemplates: getSavedTemplates(),
+    selectedId,
+    t,
   });
-  elements.templateSelect.appendChild(builtinGroup);
-
-  const customGroup = document.createElement("optgroup");
-  customGroup.label = "自定义模板";
-  templates.filter((tpl) => !tpl.id.startsWith("builtin")).forEach((tpl) => {
-    const option = document.createElement("option");
-    option.value = tpl.id;
-    option.textContent = tpl.name;
-    customGroup.appendChild(option);
-  });
-  elements.templateSelect.appendChild(customGroup);
-
-  elements.templateSelect.value = selectedId || BUILTIN_TEMPLATES[0].id;
 }
 
 function renderRecentTemplates() {
-  if (!elements.recentTemplates) return;
-  elements.recentTemplates.innerHTML = "";
-  const recentIds = getRecentTemplateIds();
-  const templates = getAllTemplates();
-  recentIds
-    .map((id) => templates.find((tpl) => tpl.id === id))
-    .filter(Boolean)
-    .forEach((tpl) => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.textContent = tpl.name;
-      btn.addEventListener("click", () => {
-        applyTemplateById(tpl.id);
-        elements.templateSelect.value = tpl.id;
-      });
-      elements.recentTemplates.appendChild(btn);
-    });
+  const templates = getAllTemplates(BUILTIN_TEMPLATES, getSavedTemplates());
+  renderRecentTemplatesUI({
+    container: elements.recentTemplates,
+    recentIds: getRecentTemplateIds(),
+    templates,
+    onPick: (id) => {
+      applyTemplateById(id);
+      elements.templateSelect.value = id;
+      updateTemplateActionsUI(elements.deleteTemplateBtn, id);
+    },
+  });
 }
 
 function applyTemplateById(id) {
-  const tpl = findTemplateById(id);
-  if (!tpl) return;
-  const data = tpl.data || {};
-  Object.assign(state, data, { processMode: "add", removeThenAdd: false });
-  applyStateToInputs();
-  syncProcessModeButtons();
-  updateExportSummary();
-  if (data.logoDataUrl) {
-    state.logoDataUrl = data.logoDataUrl;
-    loadLogoFromDataUrl(data.logoDataUrl, scheduleRenderPreview);
-  } else {
-    state.logoDataUrl = null;
-    runtime.logoImage = null;
-    scheduleRenderPreview();
-  }
-  touchRecentTemplate(id);
-  renderRecentTemplates();
-  syncMobileSections();
-}
-
-function updateTemplateActions(id) {
-  if (!elements.deleteTemplateBtn) return;
-  const isBuiltin = id && id.startsWith("builtin");
-  elements.deleteTemplateBtn.disabled = !!isBuiltin;
-}
-
-function createTemplateSnapshot() {
-  const snapshot = {
-    ...state,
-    processMode: "add",
-    removeThenAdd: false,
-  };
-  if (runtime.logoImage && state.logoDataUrl) {
-    snapshot.logoDataUrl = state.logoDataUrl;
-  }
-  return snapshot;
-}
-
-function updateExportReport(message) {
-  if (!elements.exportReport) return;
-  elements.exportReport.textContent = message || "";
+  applyTemplateByIdUI({
+    id,
+    builtinTemplates: BUILTIN_TEMPLATES,
+    savedTemplates: getSavedTemplates(),
+    state,
+    runtime,
+    applyStateToInputs,
+    syncProcessModeButtons,
+    updateExportSummary,
+    loadLogoFromDataUrl,
+    scheduleRenderPreview,
+    touchRecentTemplate,
+    renderRecent: renderRecentTemplates,
+    syncMobileSections,
+  });
 }
 
 function setupEvents() {
+  setupActionRouter({
+    root: document,
+    handlers: {
+      "open-more": () => openModal("more"),
+      "close-more": () => closeModal("more"),
+      "open-help": () => {
+        closeModal("more");
+        openModal("help");
+      },
+      "close-help": () => closeModal("help"),
+      "open-export-settings": () => {
+        closeModal("more");
+        openModal("settings");
+      },
+      "close-export-settings": () => closeModal("settings"),
+      "open-templates": () => {
+        closeModal("more");
+        setSectionCollapsed("templates", false);
+        scrollToSection("templates");
+      },
+      "focus-preview": () => scrollPreviewIntoView(),
+      "open-upload": () => elements.fileInput.click(),
+      "toggle-common-advanced": () => {
+        elements.watermarkControls.classList.toggle("show-advanced");
+        setAdvancedOpen(uiState, "commonOpen", elements.watermarkControls.classList.contains("show-advanced"));
+        syncUiStateToCore();
+        syncCommonAdvancedStates();
+      },
+      "toggle-watermark-advanced": () => {
+        elements.advancedControls.classList.toggle("is-open");
+        syncCommonAdvancedStates();
+      },
+      "toggle-export-advanced": () => {
+        setAdvancedOpen(uiState, "exportOpen", !uiState.advanced.exportOpen);
+        syncUiStateToCore();
+        syncExportAdvancedState();
+      },
+      "set-process-mode": (_event, node) => {
+        const mode = node.dataset.mode;
+        if (!mode) return;
+        elements.processModeInput.value = mode;
+        syncStateFromInputs();
+        syncProcessModeButtons();
+        updateExportSummary();
+        scheduleRenderPreview();
+      },
+      "set-layer": (_event, node) => {
+        const layer = node.dataset.layer;
+        if (layer === "text") state.type = "text";
+        if (layer === "logo") state.type = "logo";
+        if (layer === "none") state.type = null;
+        syncLayerButtons();
+        scheduleRenderPreview();
+      },
+    },
+  });
+
   [
     elements.opacityInput,
     elements.rotationInput,
@@ -766,10 +496,9 @@ function setupEvents() {
     });
   });
 
-  ["wmText", "fontFamily", "wmColor", "mode", "processMode"].forEach((id) => {
+  ["wmText", "fontFamily", "wmColor", "mode"].forEach((id) => {
     document.getElementById(id).addEventListener("input", () => {
       syncStateFromInputs();
-      syncProcessModeButtons();
       updateExportSummary();
       scheduleRenderPreview();
     });
@@ -796,123 +525,55 @@ function setupEvents() {
   });
 
   elements.removeThenAddInput.addEventListener("change", () => {
-    if (elements.removeThenAddInput.checked) {
-      elements.processModeInput.value = "remove-gemini";
-    } else {
-      elements.processModeInput.value = "add";
-    }
+    elements.processModeInput.value = elements.removeThenAddInput.checked ? "remove-gemini" : "add";
     syncStateFromInputs();
     syncProcessModeButtons();
     updateExportSummary();
     scheduleRenderPreview();
   });
 
-  elements.settingsBtn.addEventListener("click", () => elements.settingsModal.classList.add("show"));
-  if (elements.settingsBtnMobile) {
-    elements.settingsBtnMobile.addEventListener("click", () => elements.settingsModal.classList.add("show"));
-  }
-  elements.closeSettings.addEventListener("click", () => elements.settingsModal.classList.remove("show"));
-  elements.closeSettings2.addEventListener("click", () => elements.settingsModal.classList.remove("show"));
-  elements.settingsModal.addEventListener("click", (event) => {
-    if (event.target === elements.settingsModal) elements.settingsModal.classList.remove("show");
-  });
-
-  if (elements.moreBtn && elements.moreModal) {
-    elements.moreBtn.addEventListener("click", () => elements.moreModal.classList.add("show"));
-  }
-  if (elements.closeMore && elements.moreModal) {
-    elements.closeMore.addEventListener("click", () => elements.moreModal.classList.remove("show"));
-  }
-  if (elements.closeMore2 && elements.moreModal) {
-    elements.closeMore2.addEventListener("click", () => elements.moreModal.classList.remove("show"));
-  }
-  if (elements.moreModal) {
-    elements.moreModal.addEventListener("click", (event) => {
-      if (event.target === elements.moreModal) elements.moreModal.classList.remove("show");
-    });
-  }
-  if (elements.moreTemplatesBtn) {
-    elements.moreTemplatesBtn.addEventListener("click", () => {
-      if (elements.moreModal) elements.moreModal.classList.remove("show");
-      setSectionCollapsed("templates", false);
-      scrollToSection("templates");
-    });
-  }
-  if (elements.moreExportSettingsBtn) {
-    elements.moreExportSettingsBtn.addEventListener("click", () => {
-      if (elements.moreModal) elements.moreModal.classList.remove("show");
-      elements.settingsModal.classList.add("show");
-    });
-  }
   if (elements.moreLangSelect) {
     elements.moreLangSelect.addEventListener("change", (event) => {
       setLanguage(event.target.value);
     });
   }
-  if (elements.livePreviewBtn) {
-    elements.livePreviewBtn.addEventListener("click", () => {
-      scrollPreviewIntoView();
-    });
-  }
+
   if (elements.livePreviewToggle) {
     elements.livePreviewToggle.addEventListener("change", () => {
-      livePreviewEnabled = elements.livePreviewToggle.checked;
-      localStorage.setItem(LIVE_PREVIEW_KEY, livePreviewEnabled ? "1" : "0");
-      syncLivePreviewToggle();
-      if (livePreviewEnabled) {
+      uiState.livePreviewEnabled = elements.livePreviewToggle.checked;
+      syncUiStateToCore();
+      localStorage.setItem(LIVE_PREVIEW_KEY, uiState.livePreviewEnabled ? "1" : "0");
+      syncLivePreviewToggle(elements, uiState.livePreviewEnabled, t);
+      if (uiState.livePreviewEnabled) {
         renderPreview();
       }
     });
   }
 
-  elements.helpBtn.addEventListener("click", () => elements.helpModal.classList.add("show"));
-  elements.closeHelp.addEventListener("click", () => elements.helpModal.classList.remove("show"));
+  elements.settingsModal.addEventListener("click", (event) => {
+    if (event.target === elements.settingsModal) closeModal("settings");
+  });
+
+  if (elements.moreModal) {
+    elements.moreModal.addEventListener("click", (event) => {
+      if (event.target === elements.moreModal) closeModal("more");
+    });
+  }
+
   elements.helpModal.addEventListener("click", (event) => {
-    if (event.target === elements.helpModal) elements.helpModal.classList.remove("show");
+    if (event.target === elements.helpModal) closeModal("help");
   });
-
-  elements.advancedToggle.addEventListener("click", () => {
-    elements.advancedControls.classList.toggle("is-open");
-    if (elements.advancedState) {
-      const isOpen = elements.advancedControls.classList.contains("is-open");
-      elements.advancedState.textContent = t(isOpen ? "state.expanded" : "state.collapsed");
-    }
-  });
-
-  if (elements.moreSettingsBtn) {
-    elements.moreSettingsBtn.addEventListener("click", () => {
-      elements.watermarkControls.classList.toggle("show-advanced");
-      if (elements.commonState) {
-        const isOpen = elements.watermarkControls.classList.contains("show-advanced");
-        elements.commonState.textContent = t(isOpen ? "state.expanded" : "state.collapsed");
-      }
-    });
-  }
-
-  if (elements.modeToggleButtons && elements.modeToggleButtons.length) {
-    elements.modeToggleButtons.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const mode = btn.dataset.mode;
-        if (!mode) return;
-        elements.processModeInput.value = mode;
-        syncStateFromInputs();
-        syncProcessModeButtons();
-        updateExportSummary();
-        scheduleRenderPreview();
-      });
-    });
-  }
 
   elements.templateSelect.addEventListener("change", (event) => {
     const id = event.target.value;
     applyTemplateById(id);
-    updateTemplateActions(id);
+    updateTemplateActionsUI(elements.deleteTemplateBtn, id);
   });
 
   elements.saveTemplateBtn.addEventListener("click", () => {
     const name = elements.templateNameInput.value.trim();
     if (!name) return;
-    const snapshot = createTemplateSnapshot();
+    const snapshot = createTemplateSnapshot(state, runtime);
     const template = {
       id: `custom-${Date.now()}`,
       name,
@@ -921,7 +582,7 @@ function setupEvents() {
     addTemplate(template);
     elements.templateNameInput.value = "";
     renderTemplateSelect(template.id);
-    updateTemplateActions(template.id);
+    updateTemplateActionsUI(elements.deleteTemplateBtn, template.id);
     renderRecentTemplates();
     syncMobileSections();
   });
@@ -931,7 +592,7 @@ function setupEvents() {
     if (!id || id.startsWith("builtin")) return;
     removeTemplate(id);
     renderTemplateSelect(BUILTIN_TEMPLATES[0].id);
-    updateTemplateActions(BUILTIN_TEMPLATES[0].id);
+    updateTemplateActionsUI(elements.deleteTemplateBtn, BUILTIN_TEMPLATES[0].id);
     renderRecentTemplates();
     syncMobileSections();
   });
@@ -944,13 +605,6 @@ function setupEvents() {
     scheduleRenderPreview();
   });
 
-  bindLayerButton(elements.addTextBtn, "text", scheduleRenderPreview);
-  bindLayerButton(elements.addLogoBtn, "logo", scheduleRenderPreview);
-  bindLayerButton(elements.removeBtn, null, scheduleRenderPreview);
-  bindLayerButton(elements.addTextBtnMobile, "text", scheduleRenderPreview);
-  bindLayerButton(elements.addLogoBtnMobile, "logo", scheduleRenderPreview);
-  bindLayerButton(elements.removeBtnMobile, null, scheduleRenderPreview);
-
   elements.logoInput.addEventListener("change", async () => {
     const file = elements.logoInput.files && elements.logoInput.files[0];
     if (!file) return;
@@ -961,37 +615,36 @@ function setupEvents() {
 
   elements.fileInput.addEventListener("change", () => {
     resetImageCache();
-    resetProgress();
+    resetProgress(elements, updateLivePreviewImage);
     runtime.files = Array.from(elements.fileInput.files || []);
     runtime.activeImageIndex = 0;
     updatePreviewNav();
+    setEmptyStateVisible(runtime.files.length === 0);
+
     if (runtime.files.length === 0) {
-      updateFileSummary();
+      updateFileSummary(elements, runtime.files, t);
       setPrimaryButtonsEnabled(false);
       updateDragHintVisibility();
-      updateLivePreview(null);
+      updateLivePreviewImage(null);
       return;
     }
 
-    updateFileSummary();
+    updateFileSummary(elements, runtime.files, t);
     setPrimaryButtonsEnabled(true);
     scheduleRenderPreview();
     if (isMobileViewport()) {
       setSectionCollapsed("export", false);
-      requestAnimationFrame(scrollPreviewIntoView);
+      requestAnimationFrame(() => scrollToSection("upload"));
     }
   });
 
   elements.previewBtn.addEventListener("click", renderPreview);
-  if (elements.previewBtnMobile) {
-    elements.previewBtnMobile.addEventListener("click", renderPreview);
-  }
 
   elements.downloadBtn.addEventListener("click", async () => {
     if (runtime.files.length === 0) return;
     setPrimaryButtonsEnabled(false);
-    setProgress(0, t("progress.start"));
-    updateExportReport("");
+    setProgress(elements, 0, t("progress.start"));
+    updateExportReport(elements, "");
 
     try {
       const method = state.export.method || "zip";
@@ -1000,37 +653,34 @@ function setupEvents() {
         await buildOutputs(async ({ blob, fileName }) => {
           zip.file(fileName, blob);
         });
-        setProgress(100, t("progress.zipping"));
+        setProgress(elements, 100, t("progress.zipping"));
         const zipBlob = await zip.generateAsync({ type: "blob" });
         downloadBlob(zipBlob, `watermark-kpr-${Date.now()}.zip`);
-        updateExportReport(t("report.zip", { count: runtime.files.length }));
+        updateExportReport(elements, t("report.zip", { count: runtime.files.length }));
       } else if (method === "folder") {
         if ("showDirectoryPicker" in window) {
           await saveImagesToFolder();
-          updateExportReport(t("report.folder", { count: runtime.files.length }));
+          updateExportReport(elements, t("report.folder", { count: runtime.files.length }));
         } else {
           await downloadImagesIndividually();
-          updateExportReport(t("report.individual", { count: runtime.files.length }));
+          updateExportReport(elements, t("report.individual", { count: runtime.files.length }));
         }
       } else {
         await downloadImagesIndividually();
-        updateExportReport(t("report.individual", { count: runtime.files.length }));
+        updateExportReport(elements, t("report.individual", { count: runtime.files.length }));
       }
-      setProgress(100, t("progress.done"));
+      setProgress(elements, 100, t("progress.done"));
     } catch (error) {
       if (error && error.name === "AbortError") {
-        setProgress(0, t("progress.canceled"));
+        setProgress(elements, 0, t("progress.canceled"));
       } else {
         console.error(error);
-        setProgress(0, t("progress.failed"));
+        setProgress(elements, 0, t("progress.failed"));
       }
     } finally {
       setPrimaryButtonsEnabled(true);
     }
   });
-  if (elements.downloadBtnMobile) {
-    elements.downloadBtnMobile.addEventListener("click", () => elements.downloadBtn.click());
-  }
 
   if (elements.zoomOutBtn) {
     elements.zoomOutBtn.addEventListener("click", () => adjustZoom(-0.2));
@@ -1067,12 +717,19 @@ function setupEvents() {
     previewWrap.addEventListener("touchstart", (event) => {
       const touch = event.touches && event.touches[0];
       if (!touch) return;
+      const canDragWatermark = state.mode === "single" && !!state.type && state.processMode !== "remove-gemini";
+      if (event.target === elements.previewCanvas && canDragWatermark) {
+        swipeEligible = false;
+        return;
+      }
+      swipeEligible = true;
       swipeStartX = touch.clientX;
       swipeStartY = touch.clientY;
       swipeStartTime = Date.now();
     }, { passive: true });
 
     previewWrap.addEventListener("touchend", (event) => {
+      if (!swipeEligible || runtime.isDragging) return;
       const touch = event.changedTouches && event.changedTouches[0];
       if (!touch) return;
       const dx = touch.clientX - swipeStartX;
@@ -1156,7 +813,7 @@ function hitTest(event) {
 }
 
 function getHitPadding(event) {
-  const isTouch = event.pointerType === "touch" || window.matchMedia("(max-width: 640px)").matches;
+  const isTouch = event.pointerType === "touch" || isMobileViewport();
   return isTouch ? 24 : 8;
 }
 
@@ -1199,34 +856,42 @@ applyStateToInputs();
 syncLayerButtons();
 syncProcessModeButtons();
 syncCommonAdvancedStates();
+syncExportAdvancedState();
 setupEvents();
 setupSectionToggles();
 applyMobileCollapse();
 syncMobileSections();
 updateDragHintVisibility();
+
 const storedLang = localStorage.getItem(LANG_KEY);
-currentLang = storedLang || "zh";
-const storedLivePreview = localStorage.getItem(LIVE_PREVIEW_KEY);
-livePreviewEnabled = storedLivePreview !== "0";
+if (storedLang) {
+  i18n.setLanguage(storedLang, document);
+}
 if (elements.langSelect) {
-  elements.langSelect.value = currentLang;
+  elements.langSelect.value = i18n.getLanguage();
   elements.langSelect.addEventListener("change", (event) => {
     setLanguage(event.target.value);
   });
 }
 if (elements.moreLangSelect) {
-  elements.moreLangSelect.value = currentLang;
+  elements.moreLangSelect.value = i18n.getLanguage();
 }
+
+setI18n(t);
 applyI18n();
 updateExportSummary();
 syncHint();
-syncLivePreviewToggle();
+syncLivePreviewToggle(elements, uiState.livePreviewEnabled, t);
+
 window.addEventListener("resize", () => {
+  syncViewport(uiState);
+  syncUiStateToCore();
   applyMobileCollapse();
   syncMobileSections();
   updateDragHintVisibility();
   syncHint();
 });
+
 setupZoom();
 loadTemplate(() => {
   applyStateToInputs();
@@ -1239,9 +904,10 @@ loadTemplate(() => {
 
 renderTemplateSelect();
 renderRecentTemplates();
-updateTemplateActions(elements.templateSelect.value);
+updateTemplateActionsUI(elements.deleteTemplateBtn, elements.templateSelect.value);
 updateControlAvailability();
 updatePreviewNav();
+setEmptyStateVisible(true);
 
 if (!("showDirectoryPicker" in window)) {
   const option = elements.exportMethod.querySelector('option[value="folder"]');
@@ -1253,8 +919,9 @@ if (!("showDirectoryPicker" in window)) {
   }
 }
 
-
 setPrimaryButtonsEnabled(false);
-resetProgress();
+resetProgress(elements, updateLivePreviewImage);
+updateFileSummary(elements, runtime.files, t);
+syncUiStateToCore();
 
 export { renderPreview, updateHint };

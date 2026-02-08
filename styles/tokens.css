@@ -1,0 +1,68 @@
+:root {
+  --bg: #101114;
+  --panel: #17191f;
+  --panel-alt: #1d2028;
+  --text: #e8e9ed;
+  --muted: #9aa3b2;
+  --accent: #5cc8ff;
+  --accent-2: #ffb74a;
+  --border: #2a2f3a;
+  --danger: #ff6b6b;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  background-color: var(--bg);
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at 15% 10%, #1e2330, #101114 60%);
+  color: var(--text);
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  min-height: 100vh;
+  -webkit-text-size-adjust: 100%;
+}
+
+input,
+select,
+textarea,
+button {
+  font-family: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+input[type="range"],
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--accent);
+}
+
+canvas {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  touch-action: none;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

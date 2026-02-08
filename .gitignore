@@ -114,3 +114,4 @@ hs_err_pid*
 
 # Agent automation artifacts
 .agent-browser/
+tests/artifacts/

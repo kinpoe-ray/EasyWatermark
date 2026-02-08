@@ -5,13 +5,12 @@ export const elements = {
   logoInput: document.getElementById("logoInput"),
   fileSummary: document.getElementById("fileSummary"),
   previewBtn: document.getElementById("previewBtn"),
-  previewBtnMobile: document.getElementById("previewBtnMobile"),
   downloadBtn: document.getElementById("downloadBtn"),
-  downloadBtnMobile: document.getElementById("downloadBtnMobile"),
   previewCanvas: document.getElementById("previewCanvas"),
   previewViewport: document.getElementById("previewViewport"),
   previewIndex: document.getElementById("previewIndex"),
   dragHint: document.getElementById("dragHint"),
+  emptyState: document.getElementById("emptyState"),
   prevImageBtn: document.getElementById("prevImageBtn"),
   nextImageBtn: document.getElementById("nextImageBtn"),
   prevImageBtnOverlay: document.getElementById("prevImageBtnOverlay"),
@@ -25,7 +24,6 @@ export const elements = {
   exportThumb: document.getElementById("exportThumb"),
   hint: document.getElementById("hint"),
   settingsBtn: document.getElementById("settingsBtn"),
-  settingsBtnMobile: document.getElementById("settingsBtnMobile"),
   settingsModal: document.getElementById("settingsModal"),
   closeSettings: document.getElementById("closeSettings"),
   closeSettings2: document.getElementById("closeSettings2"),
@@ -46,6 +44,7 @@ export const elements = {
   closeMore2: document.getElementById("closeMore2"),
   moreTemplatesBtn: document.getElementById("moreTemplatesBtn"),
   moreExportSettingsBtn: document.getElementById("moreExportSettingsBtn"),
+  moreHelpBtn: document.getElementById("moreHelpBtn"),
   moreLangSelect: document.getElementById("moreLangSelect"),
   livePreview: document.getElementById("livePreview"),
   livePreviewToggle: document.getElementById("livePreviewToggle"),
@@ -58,9 +57,6 @@ export const elements = {
   addTextBtn: document.getElementById("addTextBtn"),
   addLogoBtn: document.getElementById("addLogoBtn"),
   removeBtn: document.getElementById("removeBtn"),
-  addTextBtnMobile: document.getElementById("addTextBtnMobile"),
-  addLogoBtnMobile: document.getElementById("addLogoBtnMobile"),
-  removeBtnMobile: document.getElementById("removeBtnMobile"),
   moreSettingsBtn: document.getElementById("moreSettingsBtn"),
   modeToggleButtons: document.querySelectorAll(".mode-toggle button"),
   processModeInput: document.getElementById("processMode"),
@@ -85,13 +81,15 @@ export const elements = {
   renameSuffixInput: document.getElementById("renameSuffix"),
   sequenceStartInput: document.getElementById("sequenceStart"),
   randomizePositionInput: document.getElementById("randomizePosition"),
+  exportAdvancedToggle: document.getElementById("exportAdvancedToggle"),
+  exportAdvancedState: document.getElementById("exportAdvancedState"),
+  exportAdvancedGroup: document.getElementById("exportAdvancedGroup"),
   wmText: document.getElementById("wmText"),
   fontFamily: document.getElementById("fontFamily"),
   wmColor: document.getElementById("wmColor"),
   modeSelect: document.getElementById("mode"),
   formatSelect: document.getElementById("format"),
   exportMethod: document.getElementById("exportMethod"),
-  langSelect: document.getElementById("langSelect"),
 };
 
 let translate = (key, vars = {}) => {
@@ -108,12 +106,12 @@ export function setI18n(fn) {
 }
 
 export function updateRangeDisplays() {
-  elements.opacityValue.textContent = elements.opacityInput.value;
-  elements.rotationValue.textContent = `${elements.rotationInput.value}°`;
-  elements.qualityValue.textContent = elements.qualityInput.value;
-  elements.fontSizeValue.textContent = elements.fontSizeInput.value;
-  elements.scaleValue.textContent = Number(elements.scaleInput.value).toFixed(2);
-  elements.tileGapValue.textContent = elements.tileGapInput.value;
+  if (elements.opacityValue) elements.opacityValue.textContent = elements.opacityInput.value;
+  if (elements.rotationValue) elements.rotationValue.textContent = `${elements.rotationInput.value}°`;
+  if (elements.qualityValue) elements.qualityValue.textContent = elements.qualityInput.value;
+  if (elements.fontSizeValue) elements.fontSizeValue.textContent = elements.fontSizeInput.value;
+  if (elements.scaleValue) elements.scaleValue.textContent = Number(elements.scaleInput.value).toFixed(2);
+  if (elements.tileGapValue) elements.tileGapValue.textContent = elements.tileGapInput.value;
 }
 
 export function applyStateToInputs() {
@@ -183,12 +181,14 @@ export function updateExportSummary() {
     zip: translate("summary.method.zip"),
   };
   const methodLabel = methodMap[state.export.method] || translate("summary.method.zip");
-  elements.exportSummary.textContent = translate("summary.template", {
-    format: formatLabel,
-    resize: resizeLabel,
-    rename: renameLabel,
-    method: methodLabel,
-  });
+  if (elements.exportSummary) {
+    elements.exportSummary.textContent = translate("summary.template", {
+      format: formatLabel,
+      resize: resizeLabel,
+      rename: renameLabel,
+      method: methodLabel,
+    });
+  }
   updateExportMethodTip();
 }
 
@@ -213,22 +213,11 @@ export function setActiveTileStyle(style) {
   });
 }
 
-export function bindLayerButton(button, type, onChange) {
-  if (!button) return;
-  button.addEventListener("click", () => {
-    state.type = type;
-    onChange();
-  });
-}
-
 export function setLayerButtonsEnabled(enabled) {
   [
     elements.addTextBtn,
     elements.addLogoBtn,
     elements.removeBtn,
-    elements.addTextBtnMobile,
-    elements.addLogoBtnMobile,
-    elements.removeBtnMobile,
   ].forEach((btn) => {
     if (!btn) return;
     btn.disabled = !enabled;
@@ -243,9 +232,6 @@ export function syncLayerButtons() {
     [elements.addTextBtn, isText],
     [elements.addLogoBtn, isLogo],
     [elements.removeBtn, isRemove],
-    [elements.addTextBtnMobile, isText],
-    [elements.addLogoBtnMobile, isLogo],
-    [elements.removeBtnMobile, isRemove],
   ].forEach(([btn, active]) => {
     if (!btn) return;
     btn.classList.toggle("is-active", active);
@@ -261,6 +247,11 @@ export function setWatermarkControlsEnabled(enabled) {
   });
 }
 
+export function setEmptyStateVisible(visible) {
+  if (!elements.emptyState) return;
+  elements.emptyState.classList.toggle("is-visible", !!visible);
+}
+
 export function applyMobileCollapse() {
   const isMobile = window.matchMedia("(max-width: 640px)").matches;
   document.querySelectorAll(".section-collapsible").forEach((section) => {
@@ -269,7 +260,7 @@ export function applyMobileCollapse() {
       return;
     }
     const key = section.dataset.section;
-    section.classList.toggle("collapsed", !["upload", "watermark"].includes(key));
+    section.classList.toggle("collapsed", !["upload", "watermark", "export"].includes(key));
   });
 }
 

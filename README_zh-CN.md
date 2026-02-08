@@ -110,3 +110,21 @@
 ## [隐私政策](https://github.com/rosuH/EasyWatermark/blob/master/PrivacyPolicy_zh-CN.md)
 
 如果你需要的话。
+
+## Web UI 回归测试（agent-browser）
+
+仓库已包含桌面端与移动端的浏览器自动化回归脚本：
+
+```bash
+# 终端 1
+python3 -m http.server 8080
+
+# 终端 2
+./tests/agent-browser/run-all.sh http://127.0.0.1:8080
+```
+
+脚本列表：
+
+- `tests/agent-browser/desktop-smoke.sh`
+- `tests/agent-browser/mobile-smoke.sh`
+- `tests/agent-browser/layout-assert.sh`
