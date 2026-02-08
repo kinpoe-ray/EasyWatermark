@@ -12,15 +12,18 @@ on:
   push:
       branches:
       - master
-      paths-ignore:
-        - '.idea/**'
-        - '.gitattributes'
-        - '.github/**.json'
-        - '.gitignore'
-        - '.gitmodules'
-        - '**.md'
-        - 'LICENSE'
-        - 'NOTICE'
+      paths:
+        - 'app/**'
+        - 'baseBenchmarks/**'
+        - 'cmonet/**'
+        - 'macrobenchmark/**'
+        - 'buildSrc/**'
+        - 'gradle/**'
+        - 'gradlew'
+        - 'gradlew.bat'
+        - 'build.gradle.kts'
+        - 'settings.gradle.kts'
+        - 'gradle.properties'
 
 jobs:
   check:
@@ -76,7 +79,7 @@ jobs:
         run: ./gradlew ${{ env.main_project_module }}:bundleRelease
 
       - name: Sign apk release
-        if: success()
+        if: ${{ success() && secrets.SIGNING_KEY != '' && secrets.ALIAS != '' && secrets.KEY_STORE_PASSWORD != '' && secrets.KEY_PASSWORD != '' }}
         id: sign_apk
         uses: r0adkll/sign-android-release@v1.0.4
         env:
@@ -88,7 +91,7 @@ jobs:
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
       - name: Sign bundle release
-        if: success()
+        if: ${{ success() && secrets.SIGNING_KEY != '' && secrets.ALIAS != '' && secrets.KEY_STORE_PASSWORD != '' && secrets.KEY_PASSWORD != '' }}
         id: sign_bundle
         uses: r0adkll/sign-android-release@v1.0.4
         env:
@@ -103,8 +106,11 @@ jobs:
         run: |
           version=$(grep 'versionName = ' app/build.gradle.kts | awk -F'"' '{print $2}')
           echo "RELEASE_VERSION=$version" >> "$GITHUB_ENV"
+      - name: Skip publish when signing secrets are missing
+        if: ${{ success() && (secrets.SIGNING_KEY == '' || secrets.ALIAS == '' || secrets.KEY_STORE_PASSWORD == '' || secrets.KEY_PASSWORD == '') }}
+        run: echo "Signing secrets are missing. Built artifacts only; signing and release publishing skipped."
       - name: Publish release.
-        if: success()
+        if: ${{ success() && secrets.SIGNING_KEY != '' && secrets.ALIAS != '' && secrets.KEY_STORE_PASSWORD != '' && secrets.KEY_PASSWORD != '' }}
         uses: softprops/action-gh-release@v2
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
