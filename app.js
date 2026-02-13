@@ -82,6 +82,7 @@ function updateHint(message) {
 }
 
 let renderQueued = false;
+let renderDebounceTimer = null;
 let swipeStartX = 0;
 let swipeStartY = 0;
 let swipeStartTime = 0;
@@ -184,12 +185,17 @@ function goNextImage() {
 }
 
 function scheduleRenderPreview() {
-  if (renderQueued) return;
-  renderQueued = true;
-  requestAnimationFrame(() => {
-    renderQueued = false;
-    renderPreview();
-  });
+  if (renderDebounceTimer) {
+    clearTimeout(renderDebounceTimer);
+  }
+  renderDebounceTimer = setTimeout(() => {
+    if (renderQueued) return;
+    renderQueued = true;
+    requestAnimationFrame(() => {
+      renderQueued = false;
+      renderPreview();
+    });
+  }, 150);
 }
 
 function isMobileViewport() {
@@ -476,6 +482,25 @@ function setupEvents() {
         if (layer === "logo") state.type = "logo";
         if (layer === "none") state.type = null;
         syncLayerButtons();
+        scheduleRenderPreview();
+      },
+      "reset-watermark": () => {
+        state.type = "text";
+        state.text = "@watermark";
+        state.fontFamily = "Arial";
+        state.fontSize = 48;
+        state.color = "#ffffff";
+        state.opacity = 0.35;
+        state.rotation = -20;
+        state.scale = 1;
+        state.mode = "single";
+        state.tileGap = 180;
+        state.tileStyle = "single";
+        state.position = { x: 0.5, y: 0.5 };
+        applyStateToInputs();
+        updateRangeDisplays();
+        syncLayerButtons();
+        setActiveTileStyle();
         scheduleRenderPreview();
       },
     },

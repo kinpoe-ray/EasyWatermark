@@ -69,6 +69,18 @@ button:hover {
   transform: translateY(-1px);
 }
 
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+button.primary:active:not(:disabled) {
+  box-shadow: 0 0 20px rgba(92, 200, 255, 0.4);
+}
+
+button.danger:active:not(:disabled) {
+  box-shadow: 0 0 20px rgba(255, 107, 107, 0.4);
+}
+
 button.ghost {
   background: transparent;
   border: 1px solid var(--border);
@@ -148,19 +160,21 @@ button:disabled {
   bottom: 12px;
   padding: 10px 12px;
   border-radius: 999px;
-  background: rgba(16, 17, 20, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(92, 200, 255, 0.12);
+  border: 1px solid rgba(92, 200, 255, 0.35);
   color: var(--text);
   font-size: 12px;
   text-align: center;
   backdrop-filter: blur(8px);
   opacity: 1;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
   pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .drag-hint.is-hidden {
   opacity: 0;
+  transform: translateY(10px);
 }
 
 .empty-state {
@@ -175,10 +189,40 @@ button:disabled {
   border-radius: 12px;
   border: 1px dashed rgba(255, 255, 255, 0.14);
   z-index: 4;
+  animation: fadeIn 0.3s ease;
 }
 
 .empty-state.is-visible {
   display: grid;
+}
+
+.empty-state::before {
+  content: "📷";
+  font-size: 48px;
+  opacity: 0.6;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
 }
 
 .empty-state p {
@@ -338,7 +382,34 @@ button:disabled {
   height: 100%;
   width: 0%;
   background: linear-gradient(120deg, var(--accent), var(--accent-2));
-  transition: width 0.2s ease;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 10px rgba(92, 200, 255, 0.5);
+  position: relative;
+}
+
+.progress-bar-fill::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 .progress-meta {
@@ -513,4 +584,22 @@ button:disabled {
   padding-left: 20px;
   color: var(--text);
   line-height: 1.6;
+}
+
+.quick-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+.quick-actions button {
+  flex: 1;
+  font-size: 12px;
+  padding: 6px 10px;
+}
+
+.quick-actions button[data-action="reset-watermark"]:hover {
+  color: var(--accent);
+  border-color: var(--accent);
 }
