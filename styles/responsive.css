@@ -2,8 +2,8 @@
   .layout {
     grid-template-columns: 1fr;
     grid-template-areas:
-      "panel"
-      "preview";
+      "preview"
+      "panel";
   }
 
   .topbar {
@@ -13,8 +13,10 @@
 }
 
 @media (max-width: 640px) {
+  /* 拇指区域布局优化 - 苹果设计原则 */
   body {
     background-attachment: scroll;
+    padding-bottom: 90px;
   }
 
   input,
@@ -24,22 +26,92 @@
     font-size: 16px;
   }
 
+  .topbar {
+    padding: 8px 12px;
+    padding-top: calc(8px + env(safe-area-inset-top));
+    border-bottom: none;
+    background: rgba(16, 17, 20, 0.95);
+  }
+
+  .topbar-left {
+    gap: 8px;
+  }
+
+  .brand {
+    font-size: 16px;
+  }
+
+  .brand-logo {
+    width: 24px;
+    height: 24px;
+  }
+
   .layout {
     grid-template-areas:
-      "panel"
-      "preview";
-    padding: 14px;
-    gap: 14px;
+      "preview"
+      "panel";
+    padding: 0;
+    gap: 0;
   }
 
-  .panel,
+  /* 预览区固定在顶部 */
   .preview {
-    padding: 14px;
-    border-radius: 14px;
+    grid-area: preview;
+    padding: 12px;
+    min-height: 40vh;
+    max-height: 45vh;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
   }
 
-  .preview {
-    min-height: 42vh;
+  .canvas-wrap {
+    padding: 8px;
+  }
+
+  .panel {
+    grid-area: panel;
+    padding: 14px;
+    border-radius: 0;
+    border: none;
+    background: var(--panel);
+  }
+
+  .section {
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+  }
+
+  /* 固定底部操作栏 */
+  .bottom-toolbar {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 14px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    background: rgba(22, 24, 30, 0.95);
+    border-top: 1px solid var(--border);
+    gap: 10px;
+    z-index: 30;
+    backdrop-filter: blur(20px);
+  }
+
+  .bottom-toolbar .primary {
+    flex: 2;
+    min-height: 50px;
+    font-size: 17px;
+  }
+
+  .bottom-toolbar .ghost {
+    flex: 1;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .more-label {
@@ -53,14 +125,44 @@
   .form-row {
     grid-template-columns: 1fr;
     align-items: stretch;
+    gap: 8px;
+    margin-bottom: 16px;
   }
 
   .watermark-actions {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .watermark-actions button {
+    min-height: 48px;
   }
 
   .value {
     text-align: left;
+    font-size: 13px;
+  }
+
+  /* 移动端模板快速选择 */
+  .template-mobile-quick {
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+    padding: 4px 0;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .template-mobile-quick::-webkit-scrollbar {
+    display: none;
+  }
+
+  .template-mobile-quick button {
+    flex: 0 0 auto;
+    min-width: max-content;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 14px;
   }
 
   .live-preview {
@@ -74,6 +176,7 @@
   .preview-header {
     align-items: flex-start;
     flex-direction: column;
+    gap: 8px;
   }
 
   .preview-tools {
@@ -103,33 +206,45 @@
   }
 
   button {
-    min-height: 44px;
-    padding: 10px 14px;
+    min-height: 48px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-weight: 600;
   }
 
   .form-row input[type="text"],
   .form-row input[type="number"],
   .form-row select {
-    min-height: 44px;
+    min-height: 48px;
+    border-radius: 12px;
+    padding: 12px 14px;
   }
 
   .form-row input[type="range"] {
-    height: 36px;
+    height: 44px;
   }
 
   .section-toggle {
-    min-height: 44px;
-    padding: 8px 0;
+    min-height: 48px;
+    padding: 12px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
   .section-toggle::after {
     content: "▾";
-    float: right;
     color: var(--muted);
+    transition: transform 0.3s ease;
   }
 
   .section-collapsible.collapsed .section-toggle::after {
     content: "▸";
+  }
+
+  /* 移动端导出区域隐藏（移到底部操作栏） */
+  .section[data-section="export"] {
+    display: none;
   }
 
   .modal {
@@ -137,8 +252,9 @@
   }
 
   .modal-card {
-    max-height: 85vh;
+    max-height: 80vh;
     overflow: auto;
+    border-radius: 20px;
   }
 
   .modal-actions {
@@ -156,5 +272,25 @@
     width: 100%;
     height: auto;
     max-height: 160px;
+  }
+
+  /* 增大触摸区域 */
+  .tile-btn {
+    min-width: 56px;
+    height: 48px;
+  }
+
+  .switch .slider {
+    width: 50px;
+    height: 28px;
+  }
+
+  .switch .slider::after {
+    width: 22px;
+    height: 22px;
+  }
+
+  .switch input:checked + .slider::after {
+    transform: translateX(22px);
   }
 }

@@ -503,7 +503,22 @@ function setupEvents() {
         setActiveTileStyle();
         scheduleRenderPreview();
       },
+      "render-preview": () => renderPreview(),
+      "start-export": () => elements.downloadBtn.click(),
     },
+  });
+
+  // Mobile quick template buttons
+  document.querySelectorAll('.template-quick-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const templateId = btn.dataset.template;
+      if (templateId) {
+        applyTemplateByIdUI(templateId);
+        touchRecentTemplate(templateId);
+        renderTemplateSelect(templateId);
+        renderRecentTemplates();
+      }
+    });
   });
 
   [

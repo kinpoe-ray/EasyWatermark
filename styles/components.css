@@ -603,3 +603,12 @@ button:disabled {
   color: var(--accent);
   border-color: var(--accent);
 }
+
+/* 底部操作栏 - 默认隐藏，仅在移动端显示 */
+.bottom-toolbar {
+  display: none;
+}
+
+.template-mobile-quick {
+  display: none;
+}

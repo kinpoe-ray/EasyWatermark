@@ -49,6 +49,12 @@
               <div class="muted" data-i18n="label.recent">最近使用</div>
               <div id="recentTemplates" class="template-chips"></div>
             </div>
+            <div class="template-mobile-quick">
+              <button class="ghost template-quick-btn" data-template="builtin-light" data-i18n="template.quick.light">浅色防泄漏</button>
+              <button class="ghost template-quick-btn" data-template="builtin-center" data-i18n="template.quick.center">中央水印</button>
+              <button class="ghost template-quick-btn" data-template="builtin-strong" data-i18n="template.quick.strong">强对角平铺</button>
+              <button class="ghost template-quick-btn" data-template="builtin-review" data-i18n="template.quick.review">审核专用</button>
+            </div>
           </div>
 
           <div class="section section-collapsible" data-section="watermark">
@@ -242,6 +248,19 @@
           </div>
         </section>
       </main>
+
+      <!-- 移动端底部操作栏 -->
+      <div class="bottom-toolbar">
+        <button id="mobileSettingsBtn" class="ghost" type="button" data-action="open-export-settings" aria-label="设置">
+          <span data-i18n="btn.settings">设置</span>
+        </button>
+        <button id="mobilePreviewBtn" class="ghost" type="button" data-action="render-preview" aria-label="预览">
+          <span data-i18n="btn.preview">预览</span>
+        </button>
+        <button id="mobileDownloadBtn" class="primary" type="button" data-action="start-export" aria-label="导出">
+          <span data-i18n="btn.export">开始导出</span>
+        </button>
+      </div>
 
       <footer class="footer">
         <span data-i18n="footer.note">全部处理在本地浏览器完成，不上传图片。作者：</span>
