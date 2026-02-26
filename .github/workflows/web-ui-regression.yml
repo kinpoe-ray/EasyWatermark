@@ -40,6 +40,7 @@ jobs:
           set -euo pipefail
           npm install -g agent-browser || npm install -g @agent-browser/cli
           agent-browser --version
+          npx playwright install chromium
 
       - name: Start static web server
         shell: bash
