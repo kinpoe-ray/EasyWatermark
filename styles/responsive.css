@@ -2,8 +2,8 @@
   .layout {
     grid-template-columns: 1fr;
     grid-template-areas:
-      "preview"
-      "panel";
+      "panel"
+      "preview";
   }
 
   .topbar {
@@ -48,8 +48,8 @@
 
   .layout {
     grid-template-areas:
-      "preview"
-      "panel";
+      "panel"
+      "preview";
     padding: 0;
     gap: 0;
   }
