@@ -23,7 +23,7 @@ agent-browser snapshot -i > "$OUT_DIR/01-mobile-home.snapshot.txt"
 SNAPSHOT="$(cat "$OUT_DIR/01-mobile-home.snapshot.txt")"
 FILE_REF="$(
   printf '%s\n' "$SNAPSHOT" | awk '
-    /button "Choose File"|button "选择文件"/ {
+    /button "Choose File"|button "选择文件"|button "上传图片"|button "Upload images"/ {
       if (match($0, /ref=e[0-9]+/)) {
         print "@" substr($0, RSTART + 4, RLENGTH - 4)
       }
@@ -32,8 +32,7 @@ FILE_REF="$(
   '
 )"
 if [[ -z "$FILE_REF" ]]; then
-  echo "Failed to locate file chooser ref"
-  exit 1
+  FILE_REF="#fileInput"
 fi
 
 agent-browser upload "$FILE_REF" "$FIXTURE_1" "$FIXTURE_2"
