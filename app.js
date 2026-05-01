@@ -172,6 +172,7 @@ function goToImage(index) {
   const nextIndex = clamp(index, 0, runtime.files.length - 1);
   if (nextIndex === runtime.activeImageIndex) return;
   runtime.activeImageIndex = nextIndex;
+  resetZoom();
   scheduleRenderPreview();
   updatePreviewNav();
 }
@@ -335,7 +336,6 @@ async function renderPreview() {
   ctx.drawImage(canvas, 0, 0);
   updateLivePreviewImage(canvas);
 
-  runtime.zoom.scale = 1;
   applyZoom();
   syncLayerButtons();
   syncHint();
