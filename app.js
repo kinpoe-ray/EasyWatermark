@@ -226,11 +226,6 @@ function syncHint() {
     updateDragHintVisibility();
     return;
   }
-  if (state.mode === "tile") {
-    updateHint(t("hint.tile"));
-    updateDragHintVisibility();
-    return;
-  }
   updateHint(isMobileViewport() ? t("hint.dragMobile") : t("hint.drag"));
   updateDragHintVisibility();
 }
@@ -266,7 +261,7 @@ function updateDragHintVisibility() {
   if (!elements.dragHint) return;
   const dismissed = localStorage.getItem(DRAG_HINT_KEY) === "1";
   const removeOnly = state.processMode === "remove-gemini" && !state.removeThenAdd;
-  const shouldShow = isMobileViewport() && !dismissed && !removeOnly && state.mode === "single" && !!state.type && runtime.files.length > 0;
+  const shouldShow = isMobileViewport() && !dismissed && !removeOnly && !!state.type && runtime.files.length > 0;
   elements.dragHint.classList.toggle("is-hidden", !shouldShow);
 }
 
@@ -783,13 +778,22 @@ function setupEvents() {
   }
 
   elements.previewCanvas.addEventListener("pointerdown", (event) => {
-    if (!runtime.files.length || state.mode === "tile" || !state.type) return;
+    if (!runtime.files.length || !state.type) return;
     if (state.processMode === "remove-gemini" && !state.removeThenAdd) return;
-    const hit = hitTest(event);
-    if (!hit) return;
+
+    if (state.mode === "single") {
+      const hit = hitTest(event);
+      if (!hit) return;
+      runtime.dragOffset = hit.offset;
+    } else {
+      const pos = getCanvasPoint(event);
+      runtime.dragOffset = {
+        x: pos.x - state.position.x * elements.previewCanvas.width,
+        y: pos.y - state.position.y * elements.previewCanvas.height,
+      };
+    }
     runtime.isDragging = true;
     dismissDragHint();
-    runtime.dragOffset = hit.offset;
     elements.previewCanvas.setPointerCapture(event.pointerId);
   });
 
@@ -802,7 +806,13 @@ function setupEvents() {
       x: clamp((pos.x - runtime.dragOffset.x) / width, 0, 1),
       y: clamp((pos.y - runtime.dragOffset.y) / height, 0, 1),
     };
-    scheduleRenderPreview();
+    if (!renderQueued) {
+      renderQueued = true;
+      requestAnimationFrame(() => {
+        renderQueued = false;
+        renderPreview();
+      });
+    }
   });
 
   elements.previewCanvas.addEventListener("pointerup", (event) => {

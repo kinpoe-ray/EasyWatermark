@@ -188,8 +188,11 @@ export function drawWatermark(ctx, width, height, settings, showGuide) {
       drawTilePattern(pctx, text, patternCanvas.width, patternCanvas.height, tileStyle);
 
       const pattern = ctx.createPattern(patternCanvas, "repeat");
+      const offsetX = (state.position.x - 0.5) * width;
+      const offsetY = (state.position.y - 0.5) * height;
       ctx.save();
       ctx.globalAlpha = 1;
+      ctx.translate(offsetX, offsetY);
       ctx.translate(width / 2, height / 2);
       ctx.rotate((rotation * Math.PI) / 180);
       ctx.translate(-width / 2, -height / 2);
@@ -221,8 +224,11 @@ export function drawWatermark(ctx, width, height, settings, showGuide) {
       drawTileImagePattern(pctx, img, scaledWidth, scaledHeight, patternCanvas.width, patternCanvas.height, tileStyle);
 
       const pattern = ctx.createPattern(patternCanvas, "repeat");
+      const offsetX = (state.position.x - 0.5) * width;
+      const offsetY = (state.position.y - 0.5) * height;
       ctx.save();
       ctx.globalAlpha = 1;
+      ctx.translate(offsetX, offsetY);
       ctx.translate(width / 2, height / 2);
       ctx.rotate((rotation * Math.PI) / 180);
       ctx.translate(-width / 2, -height / 2);
