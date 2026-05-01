@@ -19,7 +19,7 @@ export const state = {
   logoDataUrl: null,
   export: {
     format: "auto",
-    quality: 0.92,
+    quality: 1,
     resizeMode: "none",
     resizeValue: 1024,
     renameMode: "keep",

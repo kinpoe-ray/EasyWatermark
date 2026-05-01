@@ -6,6 +6,7 @@
     <title>watermark-kpr</title>
     <link rel="stylesheet" href="styles.css" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="manifest" href="manifest.json" />
   </head>
   <body>
     <div class="app">
@@ -229,7 +230,8 @@
               <button id="prevImageBtn" class="icon-btn" type="button" aria-label="上一张" data-i18n-aria="aria.prev">←</button>
               <span id="previewIndex" class="muted">0 / 0</span>
               <button id="nextImageBtn" class="icon-btn" type="button" aria-label="下一张" data-i18n-aria="aria.next">→</button>
-              <button id="zoomOutBtn" class="icon-btn" type="button" aria-label="缩小" data-i18n-aria="aria.zoomOut">-</button>
+              <span class="tool-divider"></span>
+              <button id="zoomOutBtn" class="icon-btn" type="button" aria-label="缩小" data-i18n-aria="aria.zoomOut">−</button>
               <button id="zoomResetBtn" class="icon-btn" type="button" aria-label="重置缩放" data-i18n-aria="aria.zoomReset">100%</button>
               <button id="zoomInBtn" class="icon-btn" type="button" aria-label="放大" data-i18n-aria="aria.zoomIn">+</button>
             </div>
@@ -313,10 +315,10 @@
               <option value="jpg">JPG</option>
             </select>
           </div>
-          <div class="form-row">
+          <div class="form-row" id="jpgQualityRow">
             <label for="quality" data-i18n="label.jpgQuality">JPG 质量</label>
-            <input id="quality" type="range" min="0.5" max="1" step="0.01" value="0.92" />
-            <span id="qualityValue" class="value">0.92</span>
+            <input id="quality" type="range" min="0.5" max="1" step="0.01" value="1" />
+            <span id="qualityValue" class="value">1</span>
           </div>
           <div class="form-row">
             <label for="resizeMode" data-i18n="label.resizeMode">缩放方式</label>
@@ -327,7 +329,7 @@
               <option value="max" data-i18n="option.resize.max">限制最长边</option>
             </select>
           </div>
-          <div class="form-row">
+          <div class="form-row" id="resizeValueRow" style="display:none">
             <label for="resizeValue" data-i18n="label.resizeValue">缩放数值</label>
             <input id="resizeValue" type="number" min="64" max="10000" value="1024" />
           </div>
@@ -337,6 +339,7 @@
               <span data-i18n="btn.advancedExport">高级导出参数</span>
               <span class="toggle-state" id="exportAdvancedState" data-i18n="state.collapsed">已收起</span>
             </button>
+            <span class="muted" data-i18n="hint.exportAdvanced">重命名、随机位置等</span>
           </div>
 
           <div id="exportAdvancedGroup" class="export-advanced">
@@ -408,5 +411,10 @@
     <script src="gemini-assets.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script type="module" src="app.js"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/sw.js");
+      }
+    </script>
   </body>
 </html>

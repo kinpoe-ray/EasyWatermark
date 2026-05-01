@@ -118,13 +118,32 @@ button:disabled {
 .preview-tools {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   flex-wrap: wrap;
 }
 
+.preview-tools .icon-btn {
+  font-size: 14px;
+}
+
+.preview-tools .icon-btn[aria-label$="缩放"],
+.preview-tools .icon-btn[aria-label$="Zoom"] {
+  font-size: 16px;
+  font-weight: 700;
+}
+
 #previewIndex {
-  min-width: 64px;
+  min-width: 56px;
   text-align: center;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tool-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  margin: 0 4px;
 }
 
 .preview-nav-btn {

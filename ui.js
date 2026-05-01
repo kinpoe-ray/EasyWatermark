@@ -76,6 +76,7 @@ export const elements = {
   tileStyleEl: document.getElementById("tileStyle"),
   resizeModeInput: document.getElementById("resizeMode"),
   resizeValueInput: document.getElementById("resizeValue"),
+  resizeValueRow: document.getElementById("resizeValueRow"),
   renameModeInput: document.getElementById("renameMode"),
   renamePrefixInput: document.getElementById("renamePrefix"),
   renameSuffixInput: document.getElementById("renameSuffix"),
@@ -89,6 +90,7 @@ export const elements = {
   wmColor: document.getElementById("wmColor"),
   modeSelect: document.getElementById("mode"),
   formatSelect: document.getElementById("format"),
+  jpgQualityRow: document.getElementById("jpgQualityRow"),
   exportMethod: document.getElementById("exportMethod"),
 };
 
@@ -250,6 +252,16 @@ export function setWatermarkControlsEnabled(enabled) {
 export function setEmptyStateVisible(visible) {
   if (!elements.emptyState) return;
   elements.emptyState.classList.toggle("is-visible", !!visible);
+}
+
+export function syncResizeValueVisibility() {
+  if (!elements.resizeValueRow) return;
+  elements.resizeValueRow.style.display = state.export.resizeMode === "none" ? "none" : "";
+}
+
+export function syncJpgQualityVisibility() {
+  if (!elements.jpgQualityRow) return;
+  elements.jpgQualityRow.style.display = state.export.format === "png" ? "none" : "";
 }
 
 export function applyMobileCollapse() {

@@ -1,5 +1,6 @@
 import { STORAGE_KEY, state, runtime } from "./core.js";
 import { loadLogoFromDataUrl } from "./core.js";
+import { saveLogoToIDB, loadLogoFromIDB } from "./modules/logo-storage.js";
 
 const TEMPLATE_KEY = "easy-watermark-templates";
 const RECENT_KEY = "easy-watermark-recent-templates";
@@ -129,25 +130,34 @@ export const BUILTIN_TEMPLATES = [
   },
 ];
 
-export function loadTemplate(applyStateToInputs, renderPreview) {
+export async function loadTemplate(applyStateToInputs, renderPreview) {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return;
   try {
     const saved = JSON.parse(raw);
+    const logoDataUrl = saved.logoDataUrl;
+    delete saved.logoDataUrl;
     Object.assign(state, saved);
     applyStateToInputs();
-    if (saved.logoDataUrl) {
-      loadLogoFromDataUrl(saved.logoDataUrl, renderPreview);
+
+    const storedLogo = await loadLogoFromIDB();
+    if (storedLogo) {
+      state.logoDataUrl = storedLogo;
+      loadLogoFromDataUrl(storedLogo, renderPreview);
+    } else if (logoDataUrl) {
+      state.logoDataUrl = logoDataUrl;
+      loadLogoFromDataUrl(logoDataUrl, renderPreview);
     }
   } catch (error) {
     console.warn("Failed to load template", error);
   }
 }
 
-export function saveTemplate() {
+export async function saveTemplate() {
   const payload = { ...state };
+  delete payload.logoDataUrl;
   if (runtime.logoImage && state.logoDataUrl) {
-    payload.logoDataUrl = state.logoDataUrl;
+    await saveLogoToIDB(state.logoDataUrl);
   }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 }

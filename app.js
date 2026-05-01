@@ -36,6 +36,8 @@ import {
   setupZoom,
   applyZoom,
   setI18n,
+  syncResizeValueVisibility,
+  syncJpgQualityVisibility,
 } from "./ui.js";
 import {
   createI18n,
@@ -68,6 +70,21 @@ import {
   updateExportReport,
   formatProgress,
 } from "./modules/export-ui.js";
+import {
+  setupDragEvents,
+} from "./modules/drag.js";
+import {
+  canvasToBlob,
+  downloadBlob,
+  buildOutputs,
+  saveImagesToFolder,
+  downloadImagesIndividually,
+} from "./modules/export-flow.js";
+import {
+  openModal as openModalFn,
+  closeModal as closeModalFn,
+  setupModalClickOutside,
+} from "./modules/modal.js";
 
 function getSettings() {
   return {
@@ -303,15 +320,11 @@ function scrollPreviewIntoView() {
 function openModal(name) {
   setModal(uiState, name);
   syncUiStateToCore();
-  if (name === "settings" && elements.settingsModal) elements.settingsModal.classList.add("show");
-  if (name === "more" && elements.moreModal) elements.moreModal.classList.add("show");
-  if (name === "help" && elements.helpModal) elements.helpModal.classList.add("show");
+  openModalFn(uiState, elements, name);
 }
 
 function closeModal(name) {
-  if (name === "settings" && elements.settingsModal) elements.settingsModal.classList.remove("show");
-  if (name === "more" && elements.moreModal) elements.moreModal.classList.remove("show");
-  if (name === "help" && elements.helpModal) elements.helpModal.classList.remove("show");
+  closeModalFn(uiState, elements, name);
   if (uiState.modal === name) setModal(uiState, "none");
   syncUiStateToCore();
 }
@@ -344,41 +357,20 @@ async function renderPreview() {
   updatePreviewNav();
 }
 
-async function buildOutputs(onEach) {
-  const originalPosition = { ...state.position };
-  let index = 0;
-  for (const file of runtime.files) {
-    index += 1;
-    setProgress(elements, Math.round((index / runtime.files.length) * 100), formatProgress(t, index, runtime.files.length, file.name));
-    if (state.export.randomizePosition && state.mode === "single") {
-      state.position = getRandomPosition(file.name);
-    }
-    const canvas = await renderImageWithWatermark(file, getSettings());
-    updateExportThumb(elements, canvas);
-    const { type, quality, ext } = resolveOutputFormat(file);
-    const blob = await canvasToBlob(canvas, type, quality);
-    const fileName = getOutputName(file, index - 1, ext);
-    await onEach({ blob, fileName, index });
-  }
-  state.position = originalPosition;
-}
-
-async function saveImagesToFolder() {
-  const dirHandle = await window.showDirectoryPicker();
-  await buildOutputs(async ({ blob, fileName }) => {
-    const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
-    const writable = await fileHandle.createWritable();
-    await writable.write(blob);
-    await writable.close();
-  });
-}
-
-async function downloadImagesIndividually() {
-  await buildOutputs(async ({ blob, fileName, index }) => {
-    downloadBlob(blob, fileName);
-    if (index < runtime.files.length) {
-      await new Promise((resolve) => setTimeout(resolve, 120));
-    }
+async function runBuildOutputs(onEach) {
+  await buildOutputs({
+    state,
+    runtime,
+    renderImageWithWatermark,
+    resolveOutputFormat,
+    getOutputName,
+    getRandomPosition,
+    canvasToBlob,
+    onProgress: (index, total, name) => {
+      setProgress(elements, Math.round((index / total) * 100), formatProgress(t, index, total, name));
+    },
+    onThumb: (canvas) => updateExportThumb(elements, canvas),
+    onEach,
   });
 }
 
@@ -539,6 +531,12 @@ function setupEvents() {
     });
   });
 
+  elements.formatSelect.addEventListener("change", () => {
+    syncStateFromInputs();
+    syncJpgQualityVisibility();
+    updateExportSummary();
+  });
+
   [
     elements.resizeModeInput,
     elements.resizeValueInput,
@@ -550,6 +548,7 @@ function setupEvents() {
   ].forEach((input) => {
     input.addEventListener("input", () => {
       syncStateFromInputs();
+      syncResizeValueVisibility();
       updateExportSummary();
     });
   });
@@ -585,19 +584,7 @@ function setupEvents() {
     });
   }
 
-  elements.settingsModal.addEventListener("click", (event) => {
-    if (event.target === elements.settingsModal) closeModal("settings");
-  });
-
-  if (elements.moreModal) {
-    elements.moreModal.addEventListener("click", (event) => {
-      if (event.target === elements.moreModal) closeModal("more");
-    });
-  }
-
-  elements.helpModal.addEventListener("click", (event) => {
-    if (event.target === elements.helpModal) closeModal("help");
-  });
+  setupModalClickOutside(elements, closeModal);
 
   elements.templateSelect.addEventListener("change", (event) => {
     const id = event.target.value;
@@ -685,7 +672,7 @@ function setupEvents() {
       const method = state.export.method || "zip";
       if (method === "zip") {
         const zip = new window.JSZip();
-        await buildOutputs(async ({ blob, fileName }) => {
+        await runBuildOutputs(async ({ blob, fileName }) => {
           zip.file(fileName, blob);
         });
         setProgress(elements, 100, t("progress.zipping"));
@@ -694,14 +681,14 @@ function setupEvents() {
         updateExportReport(elements, t("report.zip", { count: runtime.files.length }));
       } else if (method === "folder") {
         if ("showDirectoryPicker" in window) {
-          await saveImagesToFolder();
+          await saveImagesToFolder(runBuildOutputs);
           updateExportReport(elements, t("report.folder", { count: runtime.files.length }));
         } else {
-          await downloadImagesIndividually();
+          await downloadImagesIndividually(runBuildOutputs, downloadBlob, runtime.files.length);
           updateExportReport(elements, t("report.individual", { count: runtime.files.length }));
         }
       } else {
-        await downloadImagesIndividually();
+        await downloadImagesIndividually(runBuildOutputs, downloadBlob, runtime.files.length);
         updateExportReport(elements, t("report.individual", { count: runtime.files.length }));
       }
       setProgress(elements, 100, t("progress.done"));
@@ -777,128 +764,18 @@ function setupEvents() {
     }, { passive: true });
   }
 
-  elements.previewCanvas.addEventListener("pointerdown", (event) => {
-    if (!runtime.files.length || !state.type) return;
-    if (state.processMode === "remove-gemini" && !state.removeThenAdd) return;
-
-    if (state.mode === "single") {
-      const hit = hitTest(event);
-      if (!hit) return;
-      runtime.dragOffset = hit.offset;
-    } else {
-      const pos = getCanvasPoint(event);
-      runtime.dragOffset = {
-        x: pos.x - state.position.x * elements.previewCanvas.width,
-        y: pos.y - state.position.y * elements.previewCanvas.height,
-      };
-    }
-    runtime.isDragging = true;
-    dismissDragHint();
-    elements.previewCanvas.setPointerCapture(event.pointerId);
+  setupDragEvents({
+    state,
+    runtime,
+    elements,
+    clamp,
+    renderPreview,
+    renderQueued: () => renderQueued,
+    setRenderQueued: (v) => { renderQueued = v; },
+    dismissDragHint,
+    saveTemplate,
+    isMobileViewport,
   });
-
-  elements.previewCanvas.addEventListener("pointermove", (event) => {
-    if (!runtime.isDragging) return;
-    const pos = getCanvasPoint(event);
-    const width = elements.previewCanvas.width;
-    const height = elements.previewCanvas.height;
-    state.position = {
-      x: clamp((pos.x - runtime.dragOffset.x) / width, 0, 1),
-      y: clamp((pos.y - runtime.dragOffset.y) / height, 0, 1),
-    };
-    if (!renderQueued) {
-      renderQueued = true;
-      requestAnimationFrame(() => {
-        renderQueued = false;
-        renderPreview();
-      });
-    }
-  });
-
-  elements.previewCanvas.addEventListener("pointerup", (event) => {
-    if (!runtime.isDragging) return;
-    runtime.isDragging = false;
-    elements.previewCanvas.releasePointerCapture(event.pointerId);
-    saveTemplate();
-  });
-
-  elements.previewCanvas.addEventListener("pointercancel", (event) => {
-    if (!runtime.isDragging) return;
-    runtime.isDragging = false;
-    elements.previewCanvas.releasePointerCapture(event.pointerId);
-  });
-}
-
-function hitTest(event) {
-  const { type } = state;
-  if (!type) return null;
-
-  const pos = getCanvasPoint(event);
-  const center = getCenterPoint(elements.previewCanvas.width, elements.previewCanvas.height);
-  let width = 0;
-  let height = 0;
-  const padding = getHitPadding(event);
-
-  if (type === "text") {
-    const ctx = elements.previewCanvas.getContext("2d");
-    ctx.font = `${state.fontSize}px ${state.fontFamily}`;
-    width = ctx.measureText(state.text).width;
-    height = state.fontSize;
-  } else if (type === "logo" && runtime.logoImage) {
-    width = runtime.logoImage.width * state.scale;
-    height = runtime.logoImage.height * state.scale;
-  }
-
-  if (!width || !height) return null;
-
-  const left = center.x - width / 2 - padding;
-  const top = center.y - height / 2 - padding;
-  const right = center.x + width / 2 + padding;
-  const bottom = center.y + height / 2 + padding;
-
-  if (pos.x >= left && pos.x <= right && pos.y >= top && pos.y <= bottom) {
-    return { offset: { x: pos.x - center.x, y: pos.y - center.y } };
-  }
-  return null;
-}
-
-function getHitPadding(event) {
-  const isTouch = event.pointerType === "touch" || isMobileViewport();
-  return isTouch ? 24 : 8;
-}
-
-function getCenterPoint(width, height) {
-  return {
-    x: state.position.x * width,
-    y: state.position.y * height,
-  };
-}
-
-function getCanvasPoint(event) {
-  const rect = elements.previewCanvas.getBoundingClientRect();
-  const scaleX = elements.previewCanvas.width / rect.width;
-  const scaleY = elements.previewCanvas.height / rect.height;
-  return {
-    x: (event.clientX - rect.left) * scaleX,
-    y: (event.clientY - rect.top) * scaleY,
-  };
-}
-
-function canvasToBlob(canvas, type, quality) {
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => resolve(blob), type, quality);
-  });
-}
-
-function downloadBlob(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
 }
 
 updateRangeDisplays();
@@ -930,6 +807,8 @@ if (elements.moreLangSelect) {
 setI18n(t);
 applyI18n();
 updateExportSummary();
+syncResizeValueVisibility();
+syncJpgQualityVisibility();
 syncHint();
 syncLivePreviewToggle(elements, uiState.livePreviewEnabled, t);
 

@@ -51,8 +51,15 @@ input[type="radio"] {
 canvas {
   max-width: 100%;
   height: auto;
-  border-radius: 8px;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
   touch-action: none;
+  cursor: default;
+}
+
+.canvas-wrap.is-dragging canvas {
+  cursor: grabbing;
+  box-shadow: 0 0 0 2px var(--accent), 0 0 16px rgba(92, 200, 255, 0.15);
 }
 
 .muted {

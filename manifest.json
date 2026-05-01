@@ -1,0 +1,16 @@
+{
+  "name": "WaterMark KinPoeRay",
+  "short_name": "Watermark",
+  "description": "安全、简单地为你的敏感照片添加水印",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#101114",
+  "theme_color": "#101114",
+  "icons": [
+    {
+      "src": "logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
