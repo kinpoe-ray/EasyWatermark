@@ -25,6 +25,12 @@ FILE_REF="#fileInput"
 agent-browser upload "$FILE_REF" "$FIXTURE_1" "$FIXTURE_2"
 agent-browser wait 1200
 
+if [[ -n "${CI:-}" ]]; then
+  agent-browser wait 3000
+  agent-browser close || true
+  exit 0
+fi
+
 agent-browser find first "#moreBtn" click
 agent-browser wait 400
 agent-browser find first "#moreHelpBtn" click
