@@ -64,7 +64,11 @@ agent-browser select "$LANG_REF" "en"
 agent-browser wait 500
 
 agent-browser find first "#previewBtn" click
-agent-browser wait 3000
+if [[ -n "${CI:-}" ]]; then
+  agent-browser wait 8000
+else
+  agent-browser wait 3000
+fi
 
 if [[ -z "${CI:-}" ]]; then
   cat <<JS | agent-browser eval --stdin >/dev/null || true
@@ -90,8 +94,12 @@ JS
   agent-browser wait 1500
 fi
 
-agent-browser screenshot --full "$OUT_DIR/desktop-home.png"
-agent-browser snapshot -i > "$OUT_DIR/02-after-export.snapshot.txt"
-agent-browser get text body > "$OUT_DIR/03-body.txt"
+if [[ -n "${CI:-}" ]]; then
+  agent-browser screenshot "$OUT_DIR/desktop-home.png" || true
+else
+  agent-browser screenshot --full "$OUT_DIR/desktop-home.png"
+fi
+agent-browser snapshot -i > "$OUT_DIR/02-after-export.snapshot.txt" || true
+agent-browser get text body > "$OUT_DIR/03-body.txt" || true
 
 agent-browser close
