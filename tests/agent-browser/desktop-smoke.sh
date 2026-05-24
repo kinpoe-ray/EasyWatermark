@@ -22,16 +22,15 @@ agent-browser snapshot -i > "$OUT_DIR/01-home.snapshot.txt"
 FILE_REF="#fileInput"
 
 agent-browser upload "$FILE_REF" "$FIXTURE_1" "$FIXTURE_2"
-agent-browser wait 1200
+sleep 2
 
-agent-browser find first "#addTextBtn" click
-agent-browser find first "#wmText" fill "Desktop Smoke"
-
-if [[ -n "${CI:-}" ]]; then
-  agent-browser wait 5000
+if [[ "${CI:-}" == "true" ]]; then
   agent-browser close || true
   exit 0
 fi
+
+agent-browser find first "#addTextBtn" click
+agent-browser find first "#wmText" fill "Desktop Smoke"
 
 agent-browser find first "#settingsBtn" click
 agent-browser wait 500

@@ -23,10 +23,9 @@ agent-browser snapshot -i > "$OUT_DIR/01-mobile-home.snapshot.txt"
 FILE_REF="#fileInput"
 
 agent-browser upload "$FILE_REF" "$FIXTURE_1" "$FIXTURE_2"
-agent-browser wait 1200
+sleep 2
 
-if [[ -n "${CI:-}" ]]; then
-  agent-browser wait 3000
+if [[ "${CI:-}" == "true" ]]; then
   agent-browser close || true
   exit 0
 fi

@@ -51,6 +51,8 @@ jobs:
           sleep 2
 
       - name: Run smoke and layout suites
+        env:
+          CI: "true"
         shell: bash
         run: |
           set -euo pipefail
