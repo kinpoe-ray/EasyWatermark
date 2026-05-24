@@ -19,20 +19,7 @@ agent-browser set viewport 1440 900
 
 agent-browser snapshot -i > "$OUT_DIR/01-home.snapshot.txt"
 
-SNAPSHOT="$(cat "$OUT_DIR/01-home.snapshot.txt")"
-FILE_REF="$(
-  printf '%s\n' "$SNAPSHOT" | awk '
-    /button "Choose File"|button "选择文件"|button "上传图片"|button "Upload images"/ {
-      if (match($0, /ref=e[0-9]+/)) {
-        print "@" substr($0, RSTART + 4, RLENGTH - 4)
-      }
-      exit
-    }
-  '
-)"
-if [[ -z "$FILE_REF" ]]; then
-  FILE_REF="#fileInput"
-fi
+FILE_REF="#fileInput"
 
 agent-browser upload "$FILE_REF" "$FIXTURE_1" "$FIXTURE_2"
 agent-browser wait 1200
