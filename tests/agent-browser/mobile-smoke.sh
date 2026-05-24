@@ -45,4 +45,4 @@ agent-browser wait 400
 
 agent-browser screenshot "$OUT_DIR/mobile-home-after.png"
 agent-browser snapshot -i > "$OUT_DIR/02-mobile-after.snapshot.txt"
-agent-browser close
+agent-browser close || true

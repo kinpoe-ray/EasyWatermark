@@ -48,8 +48,8 @@ cat <<'JS' | agent-browser eval --stdin > "$OUT_DIR/mobile-assert.json"
 })();
 JS
 
-agent-browser screenshot "$OUT_DIR/mobile-layout.png"
-agent-browser close
+agent-browser screenshot "$OUT_DIR/mobile-layout.png" || true
+agent-browser close || true
 
 agent-browser open "$BASE_URL"
 agent-browser wait --load networkidle
@@ -82,5 +82,5 @@ cat <<'JS' | agent-browser eval --stdin > "$OUT_DIR/desktop-assert.json"
 })();
 JS
 
-agent-browser screenshot "$OUT_DIR/desktop-layout.png"
-agent-browser close
+agent-browser screenshot "$OUT_DIR/desktop-layout.png" || true
+agent-browser close || true
