@@ -64,9 +64,10 @@ agent-browser select "$LANG_REF" "en"
 agent-browser wait 500
 
 agent-browser find first "#previewBtn" click
-agent-browser wait 1000
+agent-browser wait 3000
 
-cat <<JS | agent-browser eval --stdin >/dev/null
+if [[ -z "${CI:-}" ]]; then
+  cat <<JS | agent-browser eval --stdin >/dev/null || true
 (() => {
   if (window.__downloadHookInstalled) return true;
   const originalClick = HTMLAnchorElement.prototype.click;
@@ -81,12 +82,13 @@ cat <<JS | agent-browser eval --stdin >/dev/null
 })();
 JS
 
-if command -v timeout >/dev/null 2>&1; then
-  timeout 20 agent-browser find first "#downloadBtn" click || true
-else
-  agent-browser find first "#downloadBtn" click || true
+  if command -v timeout >/dev/null 2>&1; then
+    timeout 20 agent-browser find first "#downloadBtn" click || true
+  else
+    agent-browser find first "#downloadBtn" click || true
+  fi
+  agent-browser wait 1500
 fi
-agent-browser wait 1500
 
 agent-browser screenshot --full "$OUT_DIR/desktop-home.png"
 agent-browser snapshot -i > "$OUT_DIR/02-after-export.snapshot.txt"
